@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+"""Provide a command-line interface for `~python_venv`:py:mod:."""
 
 import argparse
 import os
@@ -7,8 +7,7 @@ import shutil
 import stat
 import sys
 
-import utilutil.argparsing as argparsing
-import utilutil.runcommand as runcommand
+from . import argparsing, runcommand
 
 PYTHON = "python3"
 CONDA = "conda"
@@ -112,7 +111,6 @@ def _add_subcommands(argparser, commands, dest="command"):
 
 
 def _add_arguments(argparser, reqs_required=False):
-    """Add command-line arguments to an argument parser"""
     argparsing.add_dry_run_argument(argparser)
 
     reqs_group = argparser.add_argument_group(title="requirements options")
@@ -439,7 +437,7 @@ def _populate_command_actions(commands):
 
 
 def main(*argv):
-    """Do the thing"""
+    """Do the thing."""
     (prog, argv) = argparsing.grok_argv(argv)
     argparser = argparsing.setup_argparse(
         prog=prog,

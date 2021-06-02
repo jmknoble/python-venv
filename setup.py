@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # https://packaging.python.org/distributing/#setup-py
 
@@ -54,7 +54,7 @@ PROVIDES = PACKAGES
 SCRIPTS = []
 
 # Auto-generated scripts with entry points
-SCRIPT_NAMES = []
+SCRIPT_NAMES = ["python-venv"]
 # or: SCRIPT_NAMES = ["python_venv"]
 
 SCRIPT_ALIASES = {}
@@ -90,7 +90,7 @@ SETUP_REQUIREMENTS = get_requirements_from_file(
 
 TEST_SUITE = "tests"
 
-KEYWORDS = "amazon aws cloud"
+KEYWORDS = "python development virtual environment venv conda"
 CLASSIFIERS = [
     # https://pypi.python.org/pypi?%3Aaction=list_classifiers
     "Development Status :: 3 - Alpha",
