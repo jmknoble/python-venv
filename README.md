@@ -105,7 +105,8 @@ create or remove.
 what to install into a virtual environment:
 
 - **Plain** -- using a `requirements.txt` file.
-- **Frozen** -- using "frozen" requirements in a `requirements_frozen.txt` file.
+- **Frozen** -- using frozen requirements (from `pip freeze`) in a
+  `requirements_frozen.txt` file.
 - **Package** -- using the name of the Python project in the current directory
   as a package to `pip install`.
 - **Source** -- using the Python project in the current directory as a thing
@@ -129,12 +130,12 @@ These methods correspond roughly to the following:
 **python-venv** creates `dev` environments from the following requirements
 files that correspond to arguments of the `setup()` call in `setup.py`:
 
-| Requirements | `setup()` argument |
-|--------------|--------------------|
-| requirements.txt | `install_requires` |
-| dev/requirements_dev.txt | `setup_requires` |
-| dev/requirements_test.txt | `tests_require` |
-| dev/requirements_build.txt | _None_ |
+| Requirements | `setup()` argument | Purpose |
+|--------------|--------------------|---------|
+| requirements.txt | `install_requires` | Runtime requirements |
+| dev/requirements_dev.txt | `setup_requires` | Requirements for developing |
+| dev/requirements_test.txt | `tests_require` | Requirements for running tests |
+| dev/requirements_build.txt | _None_ | Requirements for building packages |
 
 This is the scheme followed by **python-venv**'s `setup.py`.  It's quite
 likely it may not work well for everyone.
@@ -152,7 +153,7 @@ The default "base name" comes from the Python project in the current directory
 This base name is used for:
 
 - The name of non-`dev` [conda][] environments as-is.
-- The name of `dev` [conda[] environments with a `-dev` suffix
+- The name of `dev` [conda][] environments with a `-dev` suffix
   (`python-venv-dev`).
 - The name of the Python package to install for `package` environments.
 
