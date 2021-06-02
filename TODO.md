@@ -9,6 +9,7 @@ source.
   an abstract base class and derived concrete classes to implement.
 - Possibly split requirements handling into its own module.
 - Clean up the CLI argument parsing.
+- Add `replace` command (`create --force`, with prompting).
 - Write unit tests.
 
 
