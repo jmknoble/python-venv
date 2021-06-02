@@ -21,6 +21,7 @@ Python packages.
 ## Contents
 
 - [Requirements](#requirements)
+- [Installation](#installation)
 - [Invocation](#invocation)
 - [Quick Start](#quick-start)
 - [Types of Virtual Environments](#types-of-virtual-environments)
@@ -36,6 +37,31 @@ Python packages.
 
 - A [Python](https://www.python.org/) interpreter, version 3.7 or later
 - The Python packages listed in **requirements.txt**
+
+
+## Installation
+
+The recommended method of installing **python-venv** is to install it into a
+virtual environment.  Currently only installation from source is supported,
+(unless you build your own packages using `python setup.py bist_wheel`).
+
+**python-venv** can create the virtual environment and install itself for you.
+For a [venv][] environment:
+
+    python3 -m python_venv create -t venv -r source --dry-run
+
+**python-venv** will say what it would do.  To actually do it, remove the
+`--dry-run` argument:
+
+    python3 -m python_venv create -t venv -r source
+
+For a [conda][] environment:
+
+    python -m python_venv create -t conda -r source --dry-run
+
+and to actually do it:
+
+    python -m python_venv create -t conda -r source
 
 
 ## Invocation
