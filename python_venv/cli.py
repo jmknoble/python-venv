@@ -7,7 +7,7 @@ import shutil
 import stat
 import sys
 
-from . import argparsing, runcommand
+from . import argparsing, get_version, runcommand
 
 PYTHON = "python3"
 CONDA = "conda"
@@ -261,6 +261,15 @@ def _add_force_arguments(argparser):
         "--force",
         action="store_true",
         help="Remove any pre-existing virtual environment",
+    )
+
+
+def _add_version_arguments(prog, argparser):
+    argparser.add_argument(
+        "-V",
+        "--version",
+        action="version",
+        version="{prog} {version}".format(prog=prog, version=get_version()),
     )
 
 
@@ -528,6 +537,7 @@ def main(*argv):
         description=DESCRIPTION_MAIN,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
+    _add_version_arguments(prog, argparser)
     _populate_command_actions(COMMANDS, prog)
     subcommands = _add_subcommands(argparser, COMMANDS)
     for (subcommand, subcommand_parser) in subcommands.items():
