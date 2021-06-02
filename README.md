@@ -43,7 +43,7 @@ Python packages.
 
 The recommended method of installing **python-venv** is to install it into a
 virtual environment.  Currently only installation from source is supported,
-(unless you build your own packages using `python setup.py bist_wheel`).
+(unless you build your own packages using `python3 setup.py bist_wheel`).
 
 **python-venv** can create the virtual environment and install itself for you.
 For a [venv][] environment:
@@ -57,11 +57,11 @@ For a [venv][] environment:
 
 For a [conda][] environment:
 
-    python -m python_venv create -t conda -r source --dry-run
+    python3 -m python_venv create -t conda -r source --dry-run
 
 and to actually do it:
 
-    python -m python_venv create -t conda -r source
+    python3 -m python_venv create -t conda -r source
 
 
 ## Invocation
@@ -81,7 +81,7 @@ and to actually do it:
 - Using the Python interpreter, either from the source directory or from an
   activated virtual enviroment where **python-venv** has been installed:
 
-        python -m python_venv
+        python3 -m python_venv
 
 For the remainder of this document, we will use `python-venv` to mean any of
 those methods.
@@ -136,7 +136,7 @@ what to install into a virtual environment:
 - **Package** -- using the name of the Python project in the current directory
   as a package to `pip install`.
 - **Source** -- using the Python project in the current directory as a thing
-  to install via `python setup.py install`.
+  to install via `python3 setup.py install`.
 - **Dev** -- using a combination of requirements files to install packages as
   a development environment for the Python project in the current directory.
 
@@ -173,7 +173,7 @@ Part of **python-venv**'s purpose in life is to create or re-create Python
 environments in a predictable way using a single command.
 
 The default "base name" comes from the Python project in the current directory
-(`python setup.py --name`), with underscores replaced by hyphens (that is,
+(`python3 setup.py --name`), with underscores replaced by hyphens (that is,
 `python-venv` for this Python project).
 
 This base name is used for:
