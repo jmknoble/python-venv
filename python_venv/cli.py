@@ -564,7 +564,8 @@ def _command_action_completion(prog, args, **_kwargs):
     if args.bash:
         print(completion.get_commands(prog, absolute=args.absolute))
     else:
-        print(completion.get_instructions(prog, COMMAND_COMPLETION))
+        completion_args = [COMMAND_COMPLETION, "--bash"]
+        print(completion.get_instructions(prog, completion_args))
 
     return STATUS_SUCCESS
 

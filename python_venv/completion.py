@@ -12,11 +12,11 @@ To enable autocompletion, add the following to your ~/.bashrc or
 ~/.bash_profile file (or the equivalent if you're using a Bash-compatible
 shell):
 
-    eval $({full_prog} {completion_command} --bash)
+    eval $({full_prog} {completion_command})
 
 Or, if {base_prog} is installed to a location on your PATH:
 
-    eval $({base_prog} {completion_command} --bash)
+    eval $({base_prog} {completion_command})
 
 (If you're seeing this message when your shell starts, double-check to make
 sure you have done the above correctly).
@@ -93,7 +93,7 @@ def _full_prog_if_not_on_path(prog, **kwargs):
     return _infer_full_prog(prog, **kwargs)
 
 
-def get_instructions(prog, completion_command):
+def get_instructions(prog, completion_args):
     """
     Get instructions for setting up autocompletion.
 
@@ -101,9 +101,9 @@ def get_instructions(prog, completion_command):
         prog
             The name of the program; typically, this is ``sys.argv[0]``.
 
-        completion_command
-            The subcommand which handles autocompletion (example:
-            ``completion``).
+        completion_args
+            A list containing the CLI arguments to `prog` to use for enabling
+            completion example: ``["completion --bash"]``).
 
     :Returns:
         A string with templates filled in, suitable for printing as a message.
@@ -113,7 +113,7 @@ def get_instructions(prog, completion_command):
         full_prog=_infer_full_prog(
             prog, with_module=True, with_relative=False, with_home=True
         ),
-        completion_command=completion_command,
+        completion_command=" ".join(completion_args),
     )
 
 
