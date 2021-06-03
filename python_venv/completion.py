@@ -14,9 +14,9 @@ than Bash):
 
     eval $({full_prog} {completion_command} --bash)
 
-If you want to see what that does:
+or, if {base_prog} is installed to a location on your PATH:
 
-    {full_prog} {completion_command} --bash
+    eval $({base_prog} {completion_command} --bash)
 
 (If you're seeing this message when your shell starts, double-check to make
 sure you have enabled autocompletion correctly).
@@ -50,7 +50,7 @@ def _contract_home(path):
     return path.replace(home_dir, "~", 1) if path.startswith(home_dir) else path
 
 
-def _infer_full_prog(prog, with_module=True, with_relative=False, with_home=True):
+def _infer_full_prog(prog, with_module=False, with_relative=True, with_home=False):
     base_prog = os.path.basename(prog)
 
     # `python -m module_name`
@@ -82,6 +82,17 @@ def _infer_full_prog(prog, with_module=True, with_relative=False, with_home=True
     return full_prog
 
 
+def _full_prog_if_not_on_path(prog, **kwargs):
+    full_prog = _infer_full_prog(
+        prog, with_module=False, with_relative=True, with_home=False
+    )
+    base_prog = _infer_base_prog(prog)
+    path_prog = shutil.which(base_prog)
+    if path_prog is not None and path_prog == full_prog:
+        return base_prog
+    return _infer_full_prog(prog, **kwargs)
+
+
 def get_instructions(prog, completion_command):
     """
     Get instructions for setting up autocompletion.
@@ -99,7 +110,9 @@ def get_instructions(prog, completion_command):
     """
     return INSTRUCTIONS.format(
         base_prog=_infer_base_prog(prog),
-        full_prog=_infer_full_prog(prog),
+        full_prog=_infer_full_prog(
+            prog, with_module=True, with_relative=False, with_home=True
+        ),
         completion_command=completion_command,
     )
 
@@ -108,7 +121,7 @@ def get_commands(prog, absolute=False):
     """Get commands needed for enabling autocompletion."""
     register_command = os.path.join(_python_bin_dir(), "register-python-argcomplete")
     if absolute:
-        prog = _infer_full_prog(prog, with_module=False, with_relative=True)
+        prog = _infer_full_prog(prog)
     else:
         prog = _infer_base_prog(prog)
     return f'eval "$({register_command} {prog})"'
