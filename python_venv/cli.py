@@ -7,7 +7,12 @@ import shutil
 import stat
 import sys
 
-from . import argparsing, get_version, runcommand
+import argcomplete
+
+from . import argparsing, completion, get_version, runcommand
+
+STATUS_SUCCESS = 0
+STATUS_FAILURE = 1
 
 PYTHON = "python3"
 CONDA = "conda"
@@ -29,6 +34,7 @@ REQUIREMENTS_SOURCE = ["{python}", "setup.py", "install"]
 
 COMMAND_CREATE = "create"
 COMMAND_REMOVE = "remove"
+COMMAND_COMPLETION = "completion"
 
 COMMANDS = {
     COMMAND_CREATE: {
@@ -40,6 +46,9 @@ COMMANDS = {
         "help": "Remove a Python virtual environment",
         "aliases": ["rm"],
         "reqs_required": False,
+    },
+    COMMAND_COMPLETION: {
+        "help": "Set up shell command-line autocompletion",
     },
 }
 
@@ -122,6 +131,11 @@ Remove a Python virtual environment for the Python project in the current
 directory.
 """
 
+DESCRIPTION_COMPLETION = """
+Set up shell command-line autocompletion.  When called with no arguments,
+print instructions for enabling autocompletion.
+"""
+
 
 def _add_subcommands(argparser, commands, dest="command"):
     subcommands = {}
@@ -137,7 +151,7 @@ def _add_subcommands(argparser, commands, dest="command"):
     return subcommands
 
 
-def _add_arguments(argparser, reqs_required=False):
+def _add_venv_arguments(argparser, reqs_required=False):
     argparsing.add_dry_run_argument(argparser)
 
     argparser.add_argument(
@@ -256,12 +270,33 @@ def _add_arguments(argparser, reqs_required=False):
     return argparser
 
 
-def _add_force_arguments(argparser):
+def _add_force_arguments(argparser, **_kwargs):
     argparser.add_argument(
         "--force",
         action="store_true",
         help="Remove any pre-existing virtual environment",
     )
+    return argparser
+
+
+def _add_completion_arguments(argparser, **_kwargs):
+    argparser.add_argument(
+        "--bash",
+        action="store_true",
+        help="Print autocompletion code for Bash-compatible shells",
+    )
+    argparser.add_argument(
+        "--absolute",
+        action="store_true",
+        help=(
+            "Normally, autocompletion works for commands that are on the PATH "
+            "and have no specific location (that is, the shell finds them). "
+            "With this option, set up autocompletion for a command that "
+            "already has an absolute ('/path/to/...') or relative ('./...') "
+            "location."
+        ),
+    )
+    return argparser
 
 
 def _add_version_arguments(prog, argparser):
@@ -271,6 +306,7 @@ def _add_version_arguments(prog, argparser):
         action="version",
         version="{prog} {version}".format(prog=prog, version=get_version()),
     )
+    return argparser
 
 
 def _progress(args, message, suffix="..."):
@@ -504,6 +540,8 @@ def _command_action_create(_prog, args, **_kwargs):
     elif args.env_type == ENV_TYPE_CONDA:
         _create_conda_env(args, env_description, requirements)
 
+    return STATUS_SUCCESS
+
 
 def _command_action_remove(_prog, args, **_kwargs):
     # set equivalence
@@ -519,14 +557,37 @@ def _command_action_remove(_prog, args, **_kwargs):
     elif args.env_type == ENV_TYPE_CONDA:
         _remove_conda_env(args, env_description)
 
+    return STATUS_SUCCESS
+
+
+def _command_action_completion(prog, args, **_kwargs):
+    if args.bash:
+        print(completion.get_commands(prog, absolute=args.absolute))
+    else:
+        print(completion.get_instructions(prog, COMMAND_COMPLETION))
+
+    return STATUS_SUCCESS
+
 
 def _populate_command_actions(commands, prog):
     func = "func"
+    description = "description"
+    add_arguments_funcs = "add_arguments_funcs"
+
     commands[COMMAND_CREATE][func] = _command_action_create
     commands[COMMAND_REMOVE][func] = _command_action_remove
-    description = "description"
+    commands[COMMAND_COMPLETION][func] = _command_action_completion
+
     commands[COMMAND_CREATE][description] = DESCRIPTION_CREATE.format(prog=prog)
     commands[COMMAND_REMOVE][description] = DESCRIPTION_REMOVE.format(prog=prog)
+    commands[COMMAND_COMPLETION][description] = DESCRIPTION_COMPLETION.format(prog=prog)
+
+    commands[COMMAND_CREATE][add_arguments_funcs] = [
+        _add_venv_arguments,
+        _add_force_arguments,
+    ]
+    commands[COMMAND_REMOVE][add_arguments_funcs] = [_add_venv_arguments]
+    commands[COMMAND_COMPLETION][add_arguments_funcs] = [_add_completion_arguments]
 
 
 def main(*argv):
@@ -541,12 +602,14 @@ def main(*argv):
     _populate_command_actions(COMMANDS, prog)
     subcommands = _add_subcommands(argparser, COMMANDS)
     for (subcommand, subcommand_parser) in subcommands.items():
-        _add_arguments(
-            subcommand_parser,
-            reqs_required=COMMANDS[subcommand].get("reqs_required", False),
-        )
-        if subcommand == COMMAND_CREATE:
-            _add_force_arguments(subcommand_parser)
+        kwargs = {}
+        for key in ["reqs_required"]:
+            if key in COMMANDS[subcommand]:
+                kwargs[key] = COMMANDS[subcommand][key]
+        for add_arguments_func in COMMANDS[subcommand]["add_arguments_funcs"]:
+            add_arguments_func(subcommand_parser, **kwargs)
+
+    argcomplete.autocomplete(argparser)
     args = argparser.parse_args(argv)
 
     try:
@@ -554,7 +617,7 @@ def main(*argv):
             return args.func(prog, args)
     except RuntimeError as e:
         print(f"{prog}: error: {e}", file=sys.stderr)
-        return 1
+        return STATUS_FAILURE
 
     raise RuntimeError(f"Unhandled subcommand: {args.command}")
 
