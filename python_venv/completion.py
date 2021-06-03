@@ -14,7 +14,7 @@ than Bash):
 
     eval $({full_prog} {completion_command} --bash)
 
-or, if {base_prog} is installed to a location on your PATH:
+If {base_prog} is installed to a location on your PATH, you may use:
 
     eval $({base_prog} {completion_command} --bash)
 
