@@ -7,7 +7,11 @@ import shutil
 import stat
 import sys
 
-import argcomplete
+try:
+    import argcomplete
+except ModuleNotFoundError:
+    # Enable running without autocompletion
+    pass
 
 from . import argparsing, completion, get_version, runcommand
 
@@ -610,7 +614,12 @@ def main(*argv):
         for add_arguments_func in COMMANDS[subcommand]["add_arguments_funcs"]:
             add_arguments_func(subcommand_parser, **kwargs)
 
-    argcomplete.autocomplete(argparser)
+    try:
+        argcomplete.autocomplete(argparser)
+    except NameError:
+        # Enable running without autocompletion
+        pass
+
     args = argparser.parse_args(argv)
 
     try:
