@@ -204,8 +204,8 @@ somewhere besides `.venv`:
 ## Command-line Autocompletion
 
 **python-venv** provides command-line [autocompletion][] for the [Bash][]
-command-line shell and compatibel shells, using the
-[argcomplete][argcomplet-pypi] Python package.
+command-line shell and compatible shells, using the
+[argcomplete][argcomplete-pypi] Python package.
 
 For instructions on how to enable completion:
 
