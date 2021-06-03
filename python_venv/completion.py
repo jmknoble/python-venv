@@ -5,21 +5,21 @@ import shutil
 import sys
 
 INSTRUCTIONS = """
-{base_prog} support command-line tab-based autocompletion for Bash and
-compatible shells.
+{base_prog} supports command-line tab-based autocompletion for Bash
+and compatible shells.
 
 To enable autocompletion, add the following to your ~/.bashrc or
-~/.bash_profile file (or the equivalent if you're using a shell other
-than Bash):
+~/.bash_profile file (or the equivalent if you're using a Bash-compatible
+shell):
 
     eval $({full_prog} {completion_command} --bash)
 
-If {base_prog} is installed to a location on your PATH, you may use:
+Or, if {base_prog} is installed to a location on your PATH:
 
     eval $({base_prog} {completion_command} --bash)
 
 (If you're seeing this message when your shell starts, double-check to make
-sure you have enabled autocompletion correctly).
+sure you have done the above correctly).
 """
 
 
