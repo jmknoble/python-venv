@@ -38,6 +38,7 @@ REQUIREMENTS_SOURCE = ["{python}", "setup.py", "install"]
 
 COMMAND_CREATE = "create"
 COMMAND_REMOVE = "remove"
+COMMAND_REPLACE = "replace"
 COMMAND_COMPLETION = "completion"
 
 COMMANDS = {
@@ -51,10 +52,20 @@ COMMANDS = {
         "aliases": ["rm"],
         "reqs_required": False,
     },
+    COMMAND_REPLACE: {
+        "help": "Remove and re-create a Python virtual environment",
+        "reqs_required": True,
+    },
     COMMAND_COMPLETION: {
         "help": "Set up shell command-line autocompletion",
     },
 }
+
+VENV_COMMANDS = [
+    COMMAND_CREATE,
+    COMMAND_REMOVE,
+    COMMAND_REPLACE,
+]
 
 REQS_PLAIN = "plain"
 REQS_DEV = "dev"
@@ -135,6 +146,11 @@ Remove a Python virtual environment for the Python project in the current
 directory.
 """
 
+DESCRIPTION_REPLACE = """
+Remove a Python virtual environment for the Python project in the current
+directory, if one exists, and then create or re-create it.
+"""
+
 DESCRIPTION_COMPLETION = """
 Set up shell command-line autocompletion.  When called with no arguments,
 print instructions for enabling autocompletion.
@@ -155,7 +171,7 @@ def _add_subcommands(argparser, commands, dest="command"):
     return subcommands
 
 
-def _add_venv_arguments(argparser, reqs_required=False):
+def _add_venv_arguments(argparser, reqs_required=False, **_kwargs):
     argparsing.add_dry_run_argument(argparser)
 
     argparser.add_argument(
@@ -278,7 +294,7 @@ def _add_force_arguments(argparser, **_kwargs):
     argparser.add_argument(
         "--force",
         action="store_true",
-        help="Remove any pre-existing virtual environment",
+        help="Do not prompt for confirmation",
     )
     return argparser
 
@@ -303,7 +319,7 @@ def _add_completion_arguments(argparser, **_kwargs):
     return argparser
 
 
-def _add_version_arguments(prog, argparser):
+def _add_version_arguments(prog, argparser, **_kwargs):
     argparser.add_argument(
         "-V",
         "--version",
@@ -368,20 +384,19 @@ def _pip_requirements(requirements, basename):
     return pip_arguments
 
 
-def _create_venv(args, env_description, requirements):
+def _create_venv(
+    args, env_description, requirements, check_preexisting=True, **_kwargs
+):
     _progress(args, f"Creating {env_description}")
 
     env_dir = _get_env_name(args)
     full_env_dir = os.path.abspath(env_dir)
 
     if os.path.isdir(env_dir):
-        preexisting_message = f"Found preexisting {env_dir}"
-        if args.force:
-            _progress(args, preexisting_message)
-            _remove_venv(args, env_description)
-        else:
+        if not args.dry_run or (args.dry_run and check_preexisting):
             raise RuntimeError(
-                preexisting_message + ", please remove it first, or use '--force'"
+                f"Found preexisting {env_dir}, please remove it first, "
+                f"or use '{COMMAND_REPLACE}' instead"
             )
     elif os.path.exists(env_dir):
         raise RuntimeError(
@@ -452,7 +467,7 @@ def _remove_venv(args, env_description):
     _progress(args, "Done.")
 
 
-def _get_conda_env_dir(args):
+def _get_conda_env_dir(args, should_raise=True):
     if args.dry_run:
         return "CONDA_ENV_DIR"
 
@@ -475,26 +490,23 @@ def _get_conda_env_dir(args):
                 env_dir = env_dir.split(maxsplit=1)[1]
             return env_dir
 
-    raise exceptions.EnvNotFoundError(f"unable to find conda environment {env_name}")
+    if should_raise:
+        raise exceptions.EnvNotFoundError(
+            f"unable to find conda environment {env_name}"
+        )
+    return None
 
 
-def _create_conda_env(args, env_description, requirements):
+def _create_conda_env(args, env_description, requirements, check_preexisting=True):
     _progress(args, f"Creating {env_description}")
 
     env_name = _get_env_name(args)
-    try:
-        env_dir = _get_conda_env_dir(args)
-    except exceptions.EnvNotFoundError:
-        env_dir = None
-
+    env_dir = _get_conda_env_dir(args, should_raise=False)
     if env_dir is not None:
-        preexisting_message = f"Found preexisting {env_name}"
-        if args.force:
-            _progress(args, preexisting_message)
-            _remove_conda_env(args, env_description)
-        else:
+        if not args.dry_run or (args.dry_run and check_preexisting):
             raise RuntimeError(
-                preexisting_message + ", please remove it first, or use '--force'"
+                f"Found preexisting {env_name}, please remove it first, "
+                f"or use '{COMMAND_REPLACE}' instead"
             )
 
     conda_command = [CONDA, "create"]
@@ -532,7 +544,13 @@ def _create_conda_env(args, env_description, requirements):
 
 def _remove_conda_env(args, env_description):
     _progress(args, f"Removing {env_description}")
+
     env_name = _get_env_name(args)
+    env_dir = _get_conda_env_dir(args, should_raise=False)
+    if env_dir is None:
+        _progress(args, f"Good news!  There is no {env_description}.")
+        return
+
     conda_command = [CONDA, "env", "remove"]
     if args.force:
         conda_command.append("--yes")
@@ -553,15 +571,31 @@ def _check_requirements(requirements):
         raise RuntimeError(f"Missing requirements {noun}: {text}")
 
 
-def _command_action_create(_prog, args, **_kwargs):
+def _init_preflight_checks(args):
+    try:
+        args.preflight_checks
+    except AttributeError:
+        args.preflight_checks = {}
+
+
+def _preflight_checks_for_create(_prog, args, **_kwargs):
+    _init_preflight_checks(args)
+    if args.preflight_checks.get(COMMAND_CREATE, False):
+        return
     requirements = REQUIREMENTS[args.reqs]
     _check_requirements(requirements)
+    args.preflight_checks[COMMAND_CREATE] = True
+
+
+def _command_action_create(prog, args, **kwargs):
+    _preflight_checks_for_create(prog, args, **kwargs)
     env_name = _get_env_name(args)
     env_description = ENV_DESCRIPTIONS[args.env_type].format(env_name=env_name)
+    requirements = REQUIREMENTS[args.reqs]
     if args.env_type == ENV_TYPE_VENV:
-        _create_venv(args, env_description, requirements)
+        _create_venv(args, env_description, requirements, **kwargs)
     elif args.env_type == ENV_TYPE_CONDA:
-        _create_conda_env(args, env_description, requirements)
+        _create_conda_env(args, env_description, requirements, **kwargs)
 
     return STATUS_SUCCESS
 
@@ -583,6 +617,13 @@ def _command_action_remove(_prog, args, **_kwargs):
     return STATUS_SUCCESS
 
 
+def _command_action_replace(prog, args, **kwargs):
+    _preflight_checks_for_create(prog, args, **kwargs)
+    _command_action_remove(prog, args, **kwargs)
+    _command_action_create(prog, args, check_preexisting=False, **kwargs)
+    return STATUS_SUCCESS
+
+
 def _command_action_completion(prog, args, **_kwargs):
     if args.bash:
         print(completion.get_commands(prog, absolute=args.absolute))
@@ -600,17 +641,19 @@ def _populate_command_actions(commands, prog):
 
     commands[COMMAND_CREATE][func] = _command_action_create
     commands[COMMAND_REMOVE][func] = _command_action_remove
+    commands[COMMAND_REPLACE][func] = _command_action_replace
     commands[COMMAND_COMPLETION][func] = _command_action_completion
 
     commands[COMMAND_CREATE][description] = DESCRIPTION_CREATE.format(prog=prog)
     commands[COMMAND_REMOVE][description] = DESCRIPTION_REMOVE.format(prog=prog)
+    commands[COMMAND_REPLACE][description] = DESCRIPTION_REPLACE.format(prog=prog)
     commands[COMMAND_COMPLETION][description] = DESCRIPTION_COMPLETION.format(prog=prog)
 
-    commands[COMMAND_CREATE][add_arguments_funcs] = [
-        _add_venv_arguments,
-        _add_force_arguments,
-    ]
-    commands[COMMAND_REMOVE][add_arguments_funcs] = [_add_venv_arguments]
+    for command in VENV_COMMANDS:
+        commands[command][add_arguments_funcs] = [
+            _add_venv_arguments,
+            _add_force_arguments,
+        ]
     commands[COMMAND_COMPLETION][add_arguments_funcs] = [_add_completion_arguments]
 
 
@@ -626,7 +669,7 @@ def main(*argv):
     _populate_command_actions(COMMANDS, prog)
     subcommands = _add_subcommands(argparser, COMMANDS)
     for (subcommand, subcommand_parser) in subcommands.items():
-        kwargs = {}
+        kwargs = {"subcommand": subcommand}
         for key in ["reqs_required"]:
             if key in COMMANDS[subcommand]:
                 kwargs[key] = COMMANDS[subcommand][key]
