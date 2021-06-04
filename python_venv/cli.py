@@ -308,7 +308,7 @@ def _add_version_arguments(prog, argparser):
         "-V",
         "--version",
         action="version",
-        version="{prog} {version}".format(prog=prog, version=get_version()),
+        version=get_version(prog),
     )
     return argparser
 
