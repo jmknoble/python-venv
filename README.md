@@ -44,7 +44,7 @@ Python packages.
 
 The recommended method of installing **python-venv** is to install it into a
 virtual environment.  Currently only installation from source is supported,
-(unless you build your own packages using `python3 setup.py bist_wheel`).
+(unless you build your own packages using `python3 setup.py bdist_wheel`).
 
 **python-venv** can create the virtual environment and install itself for you.
 For a [venv][] environment:
