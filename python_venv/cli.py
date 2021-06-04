@@ -13,7 +13,7 @@ except ModuleNotFoundError:
     # Enable running without autocompletion
     pass
 
-from . import argparsing, completion, get_version, runcommand
+from . import argparsing, completion, exceptions, get_version, runcommand
 
 STATUS_SUCCESS = 0
 STATUS_FAILURE = 1
@@ -380,7 +380,9 @@ def _create_venv(args, env_description, requirements):
             _progress(args, preexisting_message)
             _remove_venv(args, env_description)
         else:
-            raise RuntimeError(preexisting_message + ", please remove it first")
+            raise RuntimeError(
+                preexisting_message + ", please remove it first, or use '--force'"
+            )
     elif os.path.exists(env_dir):
         raise RuntimeError(
             f"{full_env_dir} exists, but is not a directory; "
@@ -473,13 +475,27 @@ def _get_conda_env_dir(args):
                 env_dir = env_dir.split(maxsplit=1)[1]
             return env_dir
 
-    raise IndexError(f"unable to find conda environment {env_name}")
+    raise exceptions.EnvNotFoundError(f"unable to find conda environment {env_name}")
 
 
 def _create_conda_env(args, env_description, requirements):
     _progress(args, f"Creating {env_description}")
 
     env_name = _get_env_name(args)
+    try:
+        env_dir = _get_conda_env_dir(args)
+    except exceptions.EnvNotFoundError:
+        env_dir = None
+
+    if env_dir is not None:
+        preexisting_message = f"Found preexisting {env_name}"
+        if args.force:
+            _progress(args, preexisting_message)
+            _remove_conda_env(args, env_description)
+        else:
+            raise RuntimeError(
+                preexisting_message + ", please remove it first, or use '--force'"
+            )
 
     conda_command = [CONDA, "create"]
     if args.force:
@@ -517,8 +533,11 @@ def _create_conda_env(args, env_description, requirements):
 def _remove_conda_env(args, env_description):
     _progress(args, f"Removing {env_description}")
     env_name = _get_env_name(args)
+    conda_command = [CONDA, "env", "remove"]
+    if args.force:
+        conda_command.append("--yes")
     runcommand.run_command(
-        [CONDA, "env", "remove", "-n", env_name], show_trace=True, dry_run=args.dry_run
+        conda_command + ["-n", env_name], show_trace=True, dry_run=args.dry_run
     )
     _progress(args, "Done.")
 
