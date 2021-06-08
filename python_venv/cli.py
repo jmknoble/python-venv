@@ -1,10 +1,6 @@
 """Provide a command-line interface for `~python_venv`:py:mod:."""
 
 import argparse
-import os
-import os.path
-import shutil
-import stat
 import sys
 
 try:
@@ -13,28 +9,12 @@ except ModuleNotFoundError:
     # Enable running without autocompletion
     pass
 
-from . import argparsing, completion, exceptions, get_version, runcommand
+from . import argparsing, completion, env, exceptions, get_version, reqs
 
 STATUS_SUCCESS = 0
 STATUS_FAILURE = 1
 
 PYTHON = "python3"
-CONDA = "conda"
-
-PROGRESS_PREFIX = "==> "
-
-VENV_DIR = ".venv"
-DEV_SUFFIX = "-dev"
-
-REQUIREMENTS_VENV = ["pip", "setuptools", "wheel"]
-
-REQUIREMENTS_PLAIN = "requirements.txt"
-REQUIREMENTS_DEV = os.path.join("dev", "requirements_dev.txt")
-REQUIREMENTS_TEST = os.path.join("dev", "requirements_test.txt")
-REQUIREMENTS_FROZEN = "requirements_frozen.txt"
-REQUIREMENTS_BUILD = os.path.join("dev", "requirements_build.txt")
-REQUIREMENTS_PACKAGE = "{basename}"
-REQUIREMENTS_SOURCE = ["{python}", "setup.py", "install"]
 
 COMMAND_CREATE = "create"
 COMMAND_REMOVE = "remove"
@@ -45,16 +25,16 @@ COMMANDS = {
     COMMAND_CREATE: {
         "help": "Create a Python virtual environment",
         "aliases": ["new"],
-        "reqs_required": True,
+        "req_scheme_required": True,
     },
     COMMAND_REMOVE: {
         "help": "Remove a Python virtual environment",
         "aliases": ["rm"],
-        "reqs_required": False,
+        "req_scheme_required": False,
     },
     COMMAND_REPLACE: {
         "help": "Remove and re-create a Python virtual environment",
-        "reqs_required": True,
+        "req_scheme_required": True,
     },
     COMMAND_COMPLETION: {
         "help": "Set up shell command-line autocompletion",
@@ -67,20 +47,6 @@ VENV_COMMANDS = [
     COMMAND_REPLACE,
 ]
 
-REQS_PLAIN = "plain"
-REQS_DEV = "dev"
-REQS_FROZEN = "frozen"
-REQS_PACKAGE = "package"
-REQS_SOURCE = "source"
-
-REQS = [
-    REQS_PLAIN,
-    REQS_DEV,
-    REQS_FROZEN,
-    REQS_PACKAGE,
-    REQS_SOURCE,
-]
-
 ENV_TYPE_VENV = "venv"
 ENV_TYPE_CONDA = "conda"
 
@@ -89,51 +55,19 @@ ENV_TYPES = [
     ENV_TYPE_CONDA,
 ]
 
-ENV_DESCRIPTIONS = {
-    ENV_TYPE_VENV: "Python venv at {env_name}",
-    ENV_TYPE_CONDA: "conda environment {env_name}",
-}
-
-FROM_FILES = "files"
-FROM_PACKAGES = "packages"
-FROM_COMMANDS = "commands"
-
-REQUIREMENTS = {
-    REQS_PLAIN: {
-        FROM_FILES: [REQUIREMENTS_PLAIN],
-    },
-    REQS_DEV: {
-        FROM_FILES: [
-            REQUIREMENTS_PLAIN,
-            REQUIREMENTS_BUILD,
-            REQUIREMENTS_DEV,
-            REQUIREMENTS_TEST,
-        ],
-    },
-    REQS_FROZEN: {
-        FROM_FILES: [REQUIREMENTS_FROZEN],
-    },
-    REQS_PACKAGE: {
-        FROM_PACKAGES: [REQUIREMENTS_PACKAGE],
-    },
-    REQS_SOURCE: {
-        FROM_COMMANDS: [REQUIREMENTS_SOURCE],
-    },
-}
-
 DEFAULT_ENV_TYPE = ENV_TYPE_VENV
 
 DESCRIPTION_MAIN = f"""
 Create or remove a Python virtual environment for the Python project in the
 current directory.  We expect a 'setup.py' to exist, along with requirements in
-'{REQUIREMENTS_PLAIN}', '{REQUIREMENTS_FROZEN}', '{REQUIREMENTS_DEV}',
-and '{REQUIREMENTS_TEST}'.
+'{reqs.REQUIREMENTS_PLAIN}', '{reqs.REQUIREMENTS_FROZEN}', '{reqs.REQUIREMENTS_DEV}',
+and '{reqs.REQUIREMENTS_TEST}'.
 
-Venv virtual environments are created in '{VENV_DIR}'.
+Venv virtual environments are created in '{env.VENV_DIR}'.
 
 Conda virtual environments are created using the name of the Python project
 (via '{PYTHON} setup.py --name'), with underscores ('_') replaced by hyphens ('-')
-and with '{DEV_SUFFIX}' appended for development environments.
+and with '{env.DEV_SUFFIX}' appended for development environments.
 """
 
 DESCRIPTION_CREATE = """
@@ -171,7 +105,7 @@ def _add_subcommands(argparser, commands, dest="command"):
     return subcommands
 
 
-def _add_venv_arguments(argparser, reqs_required=False, **_kwargs):
+def _add_venv_arguments(argparser, req_scheme_required=False, **_kwargs):
     argparsing.add_dry_run_argument(argparser)
 
     argparser.add_argument(
@@ -186,64 +120,66 @@ def _add_venv_arguments(argparser, reqs_required=False, **_kwargs):
         ),
     )
 
-    reqs_group = argparser.add_argument_group(title="requirements options")
-    reqs_mutex_group = reqs_group.add_mutually_exclusive_group(required=reqs_required)
-    reqs_mutex_group.add_argument(
+    req_scheme_group = argparser.add_argument_group(title="requirements options")
+    req_scheme_mutex_group = req_scheme_group.add_mutually_exclusive_group(
+        required=req_scheme_required
+    )
+    req_scheme_mutex_group.add_argument(
         "-r",
         "--requirements",
         action="store",
-        dest="reqs",
-        choices=REQS,
+        dest="req_scheme",
+        choices=reqs.ALL_REQ_SCHEMES,
         default=None,
         help=(
             "Requirements to use for virtual environment "
             "(equivalent to the other requirements options below)"
         ),
     )
-    reqs_mutex_group.add_argument(
+    req_scheme_mutex_group.add_argument(
         "-p",
-        f"--{REQS_PLAIN}",
+        f"--{reqs.REQ_SCHEME_PLAIN}",
         action="store_const",
-        dest="reqs",
-        const=REQS_PLAIN,
-        help=f"Virtual environment uses '{REQUIREMENTS_PLAIN}'",
+        dest="req_scheme",
+        const=reqs.REQ_SCHEME_PLAIN,
+        help=f"Virtual environment uses '{reqs.REQUIREMENTS_PLAIN}'",
     )
-    reqs_mutex_group.add_argument(
+    req_scheme_mutex_group.add_argument(
         "-d",
-        f"--{REQS_DEV}",
+        f"--{reqs.REQ_SCHEME_DEV}",
         action="store_const",
-        dest="reqs",
-        const=REQS_DEV,
+        dest="req_scheme",
+        const=reqs.REQ_SCHEME_DEV,
         help=(
             f"Virtual environment is for development; uses "
-            f"'{REQUIREMENTS_PLAIN}', '{REQUIREMENTS_DEV}', and "
-            f"'{REQUIREMENTS_TEST}'"
+            f"'{reqs.REQUIREMENTS_PLAIN}', '{reqs.REQUIREMENTS_DEV}', and "
+            f"'{reqs.REQUIREMENTS_TEST}'"
         ),
     )
-    reqs_mutex_group.add_argument(
+    req_scheme_mutex_group.add_argument(
         "-z",
-        f"--{REQS_FROZEN}",
+        f"--{reqs.REQ_SCHEME_FROZEN}",
         action="store_const",
-        dest="reqs",
-        const=REQS_FROZEN,
-        help=f"Virtual environment uses '{REQUIREMENTS_FROZEN}'",
+        dest="req_scheme",
+        const=reqs.REQ_SCHEME_FROZEN,
+        help=f"Virtual environment uses '{reqs.REQUIREMENTS_FROZEN}'",
     )
-    reqs_mutex_group.add_argument(
+    req_scheme_mutex_group.add_argument(
         "-P",
-        f"--{REQS_PACKAGE}",
+        f"--{reqs.REQ_SCHEME_PACKAGE}",
         action="store_const",
-        dest="reqs",
-        const=REQS_PACKAGE,
+        dest="req_scheme",
+        const=reqs.REQ_SCHEME_PACKAGE,
         help="Virtual environment uses 'pip install BASENAME'",
     )
-    reqs_mutex_group.add_argument(
+    req_scheme_mutex_group.add_argument(
         "-s",
-        f"--{REQS_SOURCE}",
+        f"--{reqs.REQ_SCHEME_SOURCE}",
         action="store_const",
-        dest="reqs",
-        const=REQS_SOURCE,
+        dest="req_scheme",
+        const=reqs.REQ_SCHEME_SOURCE,
         help=("Virtual environment uses '{command}'").format(
-            command=" ".join(REQUIREMENTS_SOURCE).format(python=PYTHON)
+            command=" ".join(reqs.REQUIREMENTS_SOURCE).format(python=PYTHON)
         ),
     )
 
@@ -329,302 +265,67 @@ def _add_version_arguments(prog, argparser, **_kwargs):
     return argparser
 
 
-def _progress(args, message, suffix="..."):
-    message_parts = [message]
-    if suffix and not message.endswith("."):
-        message_parts.append(suffix)
-    runcommand.print_trace(
-        message_parts, trace_prefix=PROGRESS_PREFIX, dry_run=args.dry_run
-    )
-
-
-def _get_package_name(_args):
-    package_name = runcommand.run_command(
-        [PYTHON, "setup.py", "--name"],
-        dry_run=False,
-        return_output=True,
-        show_trace=False,
-    )
-    if package_name.endswith("\n"):
-        package_name = package_name[:-1]
-    return package_name
-
-
-def _get_basename(args):
-    if args.basename is None:
-        args.basename = _get_package_name(args).replace("_", "-")
-    return args.basename
-
-
-def _get_env_name(args):
-    if args.env_name is None:
-        if args.env_type == ENV_TYPE_CONDA:
-            args.env_name = _get_basename(args)
-            if args.reqs == REQS_DEV:
-                args.env_name += DEV_SUFFIX
-        else:
-            args.env_name = VENV_DIR
-    return args.env_name
-
-
-def _get_commands(requirements, **kwargs):
-    commands = []
-    for command in requirements.get(FROM_COMMANDS, []):
-        commands.append([x.format(**kwargs) for x in command])
-    return commands
-
-
-def _pip_requirements(requirements, basename):
-    pip_arguments = []
-    for a_file in requirements.get(FROM_FILES, []):
-        pip_arguments.append("-r")
-        pip_arguments.append(a_file)
-    for package_spec in requirements.get(FROM_PACKAGES, []):
-        pip_arguments.append(package_spec.format(basename=basename))
-    return pip_arguments
-
-
-def _create_venv(
-    args, env_description, requirements, check_preexisting=True, **_kwargs
-):
-    _progress(args, f"Creating {env_description}")
-
-    env_dir = _get_env_name(args)
-    full_env_dir = os.path.abspath(env_dir)
-
-    if os.path.isdir(env_dir):
-        if not args.dry_run or (args.dry_run and check_preexisting):
-            raise RuntimeError(
-                f"Found preexisting {env_dir}, please remove it first, "
-                f"or use '{COMMAND_REPLACE}' instead"
-            )
-    elif os.path.exists(env_dir):
-        raise RuntimeError(
-            f"{full_env_dir} exists, but is not a directory; "
-            "you must deal with it by hand."
-        )
-
-    runcommand.run_command(
-        [PYTHON, "-m", "venv", env_dir], show_trace=True, dry_run=args.dry_run
-    )
-    verb = "Would have created" if args.dry_run else "Created"
-    _progress(args, f"{verb} {full_env_dir}", suffix=None)
-
-    env_bin_dir = os.path.join(env_dir, "bin")
-    env_python = os.path.join(env_bin_dir, PYTHON)
-    env_activate = os.path.join(env_bin_dir, "activate")
-
-    _progress(args, f"Installing {args.reqs} requirements")
-
-    pip_install_command = [env_python, "-m", "pip", "install"]
-    runcommand.run_command(
-        pip_install_command + ["--upgrade"] + REQUIREMENTS_VENV,
-        show_trace=True,
-        dry_run=args.dry_run,
-    )
-    if {FROM_COMMANDS} & set(requirements):  # set intersection
-        for command in _get_commands(requirements, python=env_python):
-            runcommand.run_command(command, show_trace=True, dry_run=args.dry_run)
-    if {FROM_FILES, FROM_PACKAGES} & set(requirements):  # set intersection
-        runcommand.run_command(
-            pip_install_command + _pip_requirements(requirements, _get_basename(args)),
-            show_trace=True,
-            dry_run=args.dry_run,
-        )
-
-    _progress(args, "Done.")
-    if not args.dry_run:
-        _progress(args, f"To use your virtual environment: 'source {env_activate}'.")
-
-
-def _remove_venv(args, env_description):
-    _progress(args, f"Removing {env_description}")
-
-    env_dir = _get_env_name(args)
-    full_env_dir = os.path.abspath(env_dir)
-
-    if not os.path.exists(env_dir):
-        _progress(args, f"Good news!  There is no {env_description}.")
-        return
-
-    if not os.path.isdir(env_dir):
-        raise RuntimeError(
-            f"{full_env_dir} exists, but is not a directory; "
-            "you must remove it by hand."
-        )
-
-    def _retry_readonly(func, path, _excinfo):
-        """Make file writable and attempt to remove again."""
-        os.chmod(path, stat.S_IWRITE)
-        func(path)
-
-    verb = "Would remove" if args.dry_run else "Removing"
-    _progress(args, f"{verb} {full_env_dir} and all its contents")
-
-    if not args.dry_run:
-        shutil.rmtree(env_dir, onerror=_retry_readonly)
-
-    _progress(args, "Done.")
-
-
-def _get_conda_env_dir(args, should_raise=True):
-    if args.dry_run:
-        return "CONDA_ENV_DIR"
-
-    env_name = _get_env_name(args)
-
-    env_listing = runcommand.run_command(
-        [CONDA, "env", "list"],
-        return_output=True,
-        show_trace=False,
-        dry_run=args.dry_run,
-    ).splitlines()
-
-    for line in [x.strip() for x in env_listing]:
-        if line.startswith("# ") or not line:
-            continue
-        parts = line.split(maxsplit=1)
-        if parts[0] == env_name:
-            env_dir = parts[1]
-            if env_dir.startswith("* "):
-                env_dir = env_dir.split(maxsplit=1)[1]
-            return env_dir
-
-    if should_raise:
-        raise exceptions.EnvNotFoundError(
-            f"unable to find conda environment {env_name}"
-        )
-    return None
-
-
-def _create_conda_env(args, env_description, requirements, check_preexisting=True):
-    _progress(args, f"Creating {env_description}")
-
-    env_name = _get_env_name(args)
-    env_dir = _get_conda_env_dir(args, should_raise=False)
-    if env_dir is not None:
-        if not args.dry_run or (args.dry_run and check_preexisting):
-            raise RuntimeError(
-                f"Found preexisting {env_name}, please remove it first, "
-                f"or use '{COMMAND_REPLACE}' instead"
-            )
-
-    conda_command = [CONDA, "create"]
-    if args.force:
-        conda_command.append("--yes")
-    runcommand.run_command(
-        conda_command + ["-n", env_name, "python=3"],
-        show_trace=True,
-        dry_run=args.dry_run,
-    )
-
-    env_dir = _get_conda_env_dir(args)
-    env_bin_dir = os.path.join(env_dir, "bin")
-    env_python = os.path.join(env_bin_dir, PYTHON)
-
-    _progress(args, f"Installing {args.reqs} requirements")
-
-    pip_install_command = [env_python, "-m", "pip", "install"]
-    if {FROM_COMMANDS} & set(requirements):  # set intersection
-        for command in _get_commands(requirements, python=env_python):
-            runcommand.run_command(command, show_trace=True, dry_run=args.dry_run)
-    if {FROM_FILES, FROM_PACKAGES} & set(requirements):  # set intersection
-        runcommand.run_command(
-            pip_install_command + _pip_requirements(requirements, _get_basename(args)),
-            show_trace=True,
-            dry_run=args.dry_run,
-        )
-
-    _progress(args, "Done.")
-    if not args.dry_run:
-        _progress(
-            args, f"To use your virtual environment: 'source activate {env_name}'."
-        )
-
-
-def _remove_conda_env(args, env_description):
-    _progress(args, f"Removing {env_description}")
-
-    env_name = _get_env_name(args)
-    env_dir = _get_conda_env_dir(args, should_raise=False)
-    if env_dir is None:
-        _progress(args, f"Good news!  There is no {env_description}.")
-        return
-
-    conda_command = [CONDA, "env", "remove"]
-    if args.force:
-        conda_command.append("--yes")
-    runcommand.run_command(
-        conda_command + ["-n", env_name], show_trace=True, dry_run=args.dry_run
-    )
-    _progress(args, "Done.")
-
-
-def _check_requirements(requirements):
-    missing = []
-    for requirements_file in requirements.get(FROM_FILES, []):
-        if not os.path.exists(requirements_file):
-            missing.append(requirements_file)
-    if missing:
-        noun = "file" if len(missing) == 1 else "files"
-        text = ", ".join(missing)
-        raise RuntimeError(f"Missing requirements {noun}: {text}")
-
-
-def _init_preflight_checks(args):
+def _preflight_checks_for_create(args):
     try:
-        args.preflight_checks
+        if args.preflight_checks.get(COMMAND_CREATE, False):
+            return
     except AttributeError:
         args.preflight_checks = {}
 
-
-def _preflight_checks_for_create(_prog, args, **_kwargs):
-    _init_preflight_checks(args)
-    if args.preflight_checks.get(COMMAND_CREATE, False):
-        return
-    requirements = REQUIREMENTS[args.reqs]
-    _check_requirements(requirements)
+    reqs.check_requirements_for_scheme(args.req_scheme)
     args.preflight_checks[COMMAND_CREATE] = True
 
 
-def _command_action_create(prog, args, **kwargs):
-    _preflight_checks_for_create(prog, args, **kwargs)
-    env_name = _get_env_name(args)
-    env_description = ENV_DESCRIPTIONS[args.env_type].format(env_name=env_name)
-    requirements = REQUIREMENTS[args.reqs]
+def _command_action_create(_prog, args, check_preexisting=True):
+    _preflight_checks_for_create(args)
+    kwargs = {
+        "dry_run": args.dry_run,
+        "force": args.force,
+        "python": PYTHON,
+        "basename": args.basename,
+        "env_name": args.env_name,
+    }
     if args.env_type == ENV_TYPE_VENV:
-        _create_venv(args, env_description, requirements, **kwargs)
+        virtual_env = env.VenvEnvironment(args.req_scheme, **kwargs)
     elif args.env_type == ENV_TYPE_CONDA:
-        _create_conda_env(args, env_description, requirements, **kwargs)
+        virtual_env = env.CondaEnvironment(args.req_scheme, **kwargs)
+
+    virtual_env.create(check_preexisting=check_preexisting)
 
     return STATUS_SUCCESS
 
 
-def _command_action_remove(_prog, args, **_kwargs):
+def _command_action_remove(_prog, args):
     # set equivalence
-    if {args.env_type, args.env_name, args.reqs} == {ENV_TYPE_CONDA, None}:
+    if {args.env_type, args.env_name, args.req_scheme} == {ENV_TYPE_CONDA, None}:
         raise RuntimeError(
             "Please supply either the '-e/--env-name' or '-r/--requirements' "
             "option so we know the name of the environment to remove."
         )
-    env_name = _get_env_name(args)
-    env_description = ENV_DESCRIPTIONS[args.env_type].format(env_name=env_name)
+    kwargs = {
+        "dry_run": args.dry_run,
+        "force": args.force,
+        "basename": args.basename,
+        "env_name": args.env_name,
+    }
     if args.env_type == ENV_TYPE_VENV:
-        _remove_venv(args, env_description)
+        virtual_env = env.VenvEnvironment(args.req_scheme, **kwargs)
     elif args.env_type == ENV_TYPE_CONDA:
-        _remove_conda_env(args, env_description)
+        virtual_env = env.CondaEnvironment(args.req_scheme, **kwargs)
+
+    virtual_env.remove()
 
     return STATUS_SUCCESS
 
 
-def _command_action_replace(prog, args, **kwargs):
-    _preflight_checks_for_create(prog, args, **kwargs)
-    _command_action_remove(prog, args, **kwargs)
-    _command_action_create(prog, args, check_preexisting=False, **kwargs)
+def _command_action_replace(prog, args):
+    _preflight_checks_for_create(args)
+    _command_action_remove(prog, args)
+    _command_action_create(prog, args, check_preexisting=False)
     return STATUS_SUCCESS
 
 
-def _command_action_completion(prog, args, **_kwargs):
+def _command_action_completion(prog, args):
     if args.bash:
         print(completion.get_commands(prog, absolute=args.absolute))
     else:
@@ -670,7 +371,7 @@ def main(*argv):
     subcommands = _add_subcommands(argparser, COMMANDS)
     for (subcommand, subcommand_parser) in subcommands.items():
         kwargs = {"subcommand": subcommand}
-        for key in ["reqs_required"]:
+        for key in ["req_scheme_required"]:
             if key in COMMANDS[subcommand]:
                 kwargs[key] = COMMANDS[subcommand][key]
         for add_arguments_func in COMMANDS[subcommand]["add_arguments_funcs"]:
@@ -685,8 +386,25 @@ def main(*argv):
     args = argparser.parse_args(argv)
 
     try:
-        if args.func is not None:
-            return args.func(prog, args)
+        try:
+            if args.func is not None:
+                return args.func(prog, args)
+
+        except exceptions.MissingRequirementsError as e:
+            message = "{msg}: {args}".format(msg=e.args[0], args=", ".join(e.args[1]))
+            raise RuntimeError(message)
+
+        except exceptions.EnvExistsError as e:
+            message = (
+                e.args[0]
+                + f"; please remove it first, or use '{COMMAND_REPLACE}' instead"
+            )
+            raise RuntimeError(message)
+
+        except exceptions.EnvOccludedError as e:
+            message = e.args[0] + "; you must deal with it by hand"
+            raise RuntimeError(message)
+
     except RuntimeError as e:
         print(f"{prog}: error: {e}", file=sys.stderr)
         return STATUS_FAILURE
