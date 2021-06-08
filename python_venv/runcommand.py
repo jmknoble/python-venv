@@ -76,7 +76,7 @@ def run_command(
         return_output
             (optional) If `True`-ish, return the output from the command (uses
             `subprocess.check_output()`:py:meth: with
-            ``universal_newlines``=`True`)
+            ``universal_newlines=True``)
 
         show_trace
             (optional) If `True`-ish, print a trace of the command right before
