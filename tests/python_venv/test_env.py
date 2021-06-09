@@ -35,8 +35,12 @@ class TestBaseVirtualEnvironment(unittest.TestCase):
         reqs.REQUIREMENTS = self.saved_requirements
 
     def test_PV_ENV_BAS_000_instantiate_empty(self):
-        with self.assertRaises(TypeError) as _:
+        with self.assertRaises(TypeError) as context:
             env.BaseVirtualEnvironment()
+            msg = context.args[0]
+            self.assertTrue(
+                msg.startswith("__init__() missing 1 required positional argument")
+            )
 
     def test_PV_ENV_BAS_001_instantiate(self):
         x = env.BaseVirtualEnvironment("dummy_req_scheme")
@@ -84,27 +88,27 @@ class TestBaseVirtualEnvironment(unittest.TestCase):
 
     def test_PV_ENV_BAS_040_abstract_env_name(self):
         x = env.BaseVirtualEnvironment("dummy_req_scheme")
-        with self.assertRaises(NotImplementedError) as _:
+        with self.assertRaises(NotImplementedError):
             x.env_name
 
     def test_PV_ENV_BAS_050_abstract_env_dir(self):
         x = env.BaseVirtualEnvironment("dummy_req_scheme")
-        with self.assertRaises(NotImplementedError) as _:
+        with self.assertRaises(NotImplementedError):
             x.env_dir
 
     def test_PV_ENV_BAS_060_abstract_env_description(self):
         x = env.BaseVirtualEnvironment("dummy_req_scheme")
-        with self.assertRaises(NotImplementedError) as _:
+        with self.assertRaises(NotImplementedError):
             x.env_description
 
     def test_PV_ENV_BAS_100_abstract_create(self):
         x = env.BaseVirtualEnvironment("dummy_req_scheme")
-        with self.assertRaises(NotImplementedError) as _:
+        with self.assertRaises(NotImplementedError):
             x.create()
 
     def test_PV_ENV_BAS_200_abstract_remove(self):
         x = env.BaseVirtualEnvironment("dummy_req_scheme")
-        with self.assertRaises(NotImplementedError) as _:
+        with self.assertRaises(NotImplementedError):
             x.remove()
 
 
@@ -119,8 +123,12 @@ class TestVenvEnvironment(unittest.TestCase):
         reqs.REQUIREMENTS = self.saved_requirements
 
     def test_PV_ENV_VNV_000_instantiate_empty(self):
-        with self.assertRaises(TypeError) as _:
+        with self.assertRaises(TypeError) as context:
             env.VenvEnvironment()
+            msg = context.args[0]
+            self.assertTrue(
+                msg.startswith("__init__() missing 1 required positional argument")
+            )
 
     @parameterized.parameterized.expand(
         [
@@ -260,8 +268,12 @@ class TestCondaEnvironment(unittest.TestCase):
         reqs.REQUIREMENTS = self.saved_requirements
 
     def test_PV_ENV_CDA_000_instantiate_empty(self):
-        with self.assertRaises(TypeError) as _:
+        with self.assertRaises(TypeError) as context:
             env.CondaEnvironment()
+            msg = context.args[0]
+            self.assertTrue(
+                msg.startswith("__init__() missing 1 required positional argument")
+            )
 
     @parameterized.parameterized.expand(
         [

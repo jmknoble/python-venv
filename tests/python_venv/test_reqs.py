@@ -215,7 +215,7 @@ class TestRequirements(unittest.TestCase):
         reqs.check_requirements_for_scheme(reqs.REQ_SCHEME_PLAIN)
 
     def test_PV_RQ_101_check_requirements_for_scheme_invalid(self):
-        with self.assertRaises(KeyError) as _:
+        with self.assertRaises(KeyError):
             reqs.check_requirements_for_scheme("yuck")
 
     def test_PV_RQ_102_check_requirements_for_scheme_nonexistent(self):
@@ -224,5 +224,5 @@ class TestRequirements(unittest.TestCase):
                 reqs.FROM_FILES: ["weird-nonexistent.flummox"],
             },
         }
-        with self.assertRaises(exceptions.MissingRequirementsError) as _:
+        with self.assertRaises(exceptions.MissingRequirementsError):
             reqs.check_requirements_for_scheme("weird")
