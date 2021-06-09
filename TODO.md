@@ -11,7 +11,7 @@ source and suffers from that.
 - DONE ~Possibly split requirements handling into its own module.~
 - Clean up the CLI argument parsing.
 - DONE (but no prompting) ~Add `replace` command (`create --force`, with prompting).~
-- Write unit tests.
+- DONE ~Write unit tests.~
 
 
 ## Build
