@@ -265,19 +265,7 @@ def _add_version_arguments(prog, argparser, **_kwargs):
     return argparser
 
 
-def _preflight_checks_for_create(args):
-    try:
-        if args.preflight_checks.get(COMMAND_CREATE, False):
-            return
-    except AttributeError:
-        args.preflight_checks = {}
-
-    reqs.check_requirements_for_scheme(args.req_scheme)
-    args.preflight_checks[COMMAND_CREATE] = True
-
-
 def _command_action_create(_prog, args, check_preexisting=True):
-    _preflight_checks_for_create(args)
     kwargs = {
         "dry_run": args.dry_run,
         "force": args.force,
@@ -319,7 +307,7 @@ def _command_action_remove(_prog, args):
 
 
 def _command_action_replace(prog, args):
-    _preflight_checks_for_create(args)
+    reqs.check_requirements_for_scheme(args.req_scheme)
     _command_action_remove(prog, args)
     _command_action_create(prog, args, check_preexisting=False)
     return STATUS_SUCCESS

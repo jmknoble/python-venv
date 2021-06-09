@@ -26,6 +26,14 @@ class BaseVirtualEnvironment(object):
             The requirements scheme from `~python_env.reqs`:py:mod: to use for
             this environment.
 
+        basename
+            (optional) The basename of the Python project in the current
+            directory (default: inferred).
+
+        env_name
+            (optional) The name of the virtual environment to create (default:
+            inferred).
+
         dry_run
             (optional) If `True`-ish, say what would be done rather than doing it.
 
@@ -39,33 +47,38 @@ class BaseVirtualEnvironment(object):
             (optional) The basename of the Python interpreter to use for
             running Python commands.
 
-        basename
-            (optional) The basename of the Python project in the current
-            directory (default: inferred).
+        os_environ
+            (optional) If supplied, a dictionary that replaces
+            `os.environ`:py:attr: when subprocesses are called.
 
-        env_name
-            (optional) The name of the virtual environment to create (default:
-            inferred).
+        ignore_preflight_checks
+            (optional) If `True`-ish, do not run pre-flight checks; use
+            caution, as this could lead to unintended consequences!
     """
 
     def __init__(
         self,
         req_scheme,
+        basename=None,
+        env_name=None,
         dry_run=False,
         force=False,
         message_prefix=None,
         python=None,
-        basename=None,
-        env_name=None,
+        os_environ=None,
+        ignore_preflight_checks=False,
     ):
         self.req_scheme = req_scheme
+
+        self._basename = basename
+        self._env_name = env_name
+
         self.dry_run = dry_run
         self.force = force
         self.message_prefix = message_prefix
         self.python = python
-
-        self._basename = basename
-        self._env_name = env_name
+        self.os_environ = os_environ
+        self.ignore_preflight_checks = ignore_preflight_checks
 
         self._requirements = None
         self._package_name = None
@@ -76,6 +89,9 @@ class BaseVirtualEnvironment(object):
 
         if self.python is None:
             self.python = PYTHON
+
+        if self.os_environ is None:
+            self.os_environ = os.environ
 
     def progress(self, message, suffix="..."):
         """Print a progress message."""
@@ -107,6 +123,7 @@ class BaseVirtualEnvironment(object):
                 dry_run=False,
                 return_output=True,
                 show_trace=False,
+                env=self.os_environ,
             )
             if self._package_name.endswith("\n"):
                 self._package_name = self._package_name[:-1]
@@ -139,6 +156,11 @@ class BaseVirtualEnvironment(object):
         raise NotImplementedError(
             "This is an abstract base class, please inherit from it."
         )
+
+    def preflight_checks_for_create(self):
+        """Run preflight checks needed before creating this environment."""
+        if not self.ignore_preflight_checks:
+            reqs.check_requirements_for_scheme(self.req_scheme)
 
     def create(self, check_preexisting=True):
         """Create the environment (abstract method)."""
@@ -192,6 +214,7 @@ class VenvEnvironment(BaseVirtualEnvironment):
     def create(self, check_preexisting=True):
         """Create this environment."""
         self.progress(f"Creating {self.env_description}")
+        self.preflight_checks_for_create()
 
         if os.path.isdir(self.env_dir):
             if not self.dry_run or (self.dry_run and check_preexisting):
@@ -205,6 +228,7 @@ class VenvEnvironment(BaseVirtualEnvironment):
             [self.python, "-m", "venv", self.env_dir],
             show_trace=True,
             dry_run=self.dry_run,
+            env=self.os_environ,
         )
         verb = "Would have created" if self.dry_run else "Created"
         self.progress(f"{verb} {self.full_env_dir}", suffix=None)
@@ -220,10 +244,13 @@ class VenvEnvironment(BaseVirtualEnvironment):
             pip_install_command + ["--upgrade"] + reqs.requirements_for_venv(),
             show_trace=True,
             dry_run=self.dry_run,
+            env=self.os_environ,
         )
 
         for command in reqs.command_requirements(self.requirements, python=env_python):
-            runcommand.run_command(command, show_trace=True, dry_run=self.dry_run)
+            runcommand.run_command(
+                command, show_trace=True, dry_run=self.dry_run, env=self.os_environ
+            )
 
         if reqs.requirements_need_pip(self.requirements):
             runcommand.run_command(
@@ -231,6 +258,7 @@ class VenvEnvironment(BaseVirtualEnvironment):
                 + reqs.pip_requirements(self.requirements, self.basename),
                 show_trace=True,
                 dry_run=self.dry_run,
+                env=self.os_environ,
             )
 
         self.progress("Done.")
@@ -290,6 +318,7 @@ class CondaEnvironment(BaseVirtualEnvironment):
             return_output=True,
             show_trace=False,
             dry_run=self.dry_run,
+            env=self.os_environ,
         ).splitlines()
 
         for line in (x.strip() for x in env_listing):  # generator expression
@@ -324,6 +353,7 @@ class CondaEnvironment(BaseVirtualEnvironment):
     def create(self, check_preexisting=True):
         """Create this environment."""
         self.progress(f"Creating {self.env_description}")
+        self.preflight_checks_for_create()
 
         if self.env_exists(want=False) and (
             not self.dry_run or (self.dry_run and check_preexisting)
@@ -337,6 +367,7 @@ class CondaEnvironment(BaseVirtualEnvironment):
             conda_command + ["-n", self.env_name, "python=3"],
             show_trace=True,
             dry_run=self.dry_run,
+            env=self.os_environ,
         )
 
         env_bin_dir = os.path.join(self.env_dir, "bin")  # raises if not found
@@ -345,7 +376,9 @@ class CondaEnvironment(BaseVirtualEnvironment):
         self.progress(f"Installing {self.req_scheme} requirements")
 
         for command in reqs.command_requirements(self.requirements, python=env_python):
-            runcommand.run_command(command, show_trace=True, dry_run=self.dry_run)
+            runcommand.run_command(
+                command, show_trace=True, dry_run=self.dry_run, env=self.os_environ
+            )
 
         if reqs.requirements_need_pip(self.requirements):
             runcommand.run_command(
@@ -353,6 +386,7 @@ class CondaEnvironment(BaseVirtualEnvironment):
                 + reqs.pip_requirements(self.requirements, self.basename),
                 show_trace=True,
                 dry_run=self.dry_run,
+                env=self.os_environ,
             )
 
         self.progress("Done.")
@@ -373,6 +407,9 @@ class CondaEnvironment(BaseVirtualEnvironment):
         if self.force:
             conda_command.append("--yes")
         runcommand.run_command(
-            conda_command + ["-n", self.env_name], show_trace=True, dry_run=self.dry_run
+            conda_command + ["-n", self.env_name],
+            show_trace=True,
+            dry_run=self.dry_run,
+            env=self.os_environ,
         )
         self.progress("Done.")
