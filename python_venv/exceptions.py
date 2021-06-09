@@ -16,6 +16,8 @@ class EnvError(BaseError):
 class RequirementsError(BaseError):
     """Base exception for requirements."""
 
+    pass
+
 
 class EnvNotFoundError(EnvError):
     """A virtual environment was expected to exist, but does not."""
