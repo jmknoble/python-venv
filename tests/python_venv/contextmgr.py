@@ -119,7 +119,7 @@ def _clean_environ_copy(environ):
 
 
 @contextlib.contextmanager
-def project(package_name, filespecs=None, cleanup=None, **kwargs):
+def project(package_name, dirs=None, filespecs=None, cleanup=None, **kwargs):
     """
     Set up a mock Python project to create an environment from and change
     directory to it.
@@ -127,6 +127,9 @@ def project(package_name, filespecs=None, cleanup=None, **kwargs):
     :Args:
         package_name
             The name of the Python package the project contains.
+
+        dirs
+            (optional) a list of directories to create recursively.
 
         filespecs
             (optional) a dictionary in the form::
@@ -150,6 +153,8 @@ def project(package_name, filespecs=None, cleanup=None, **kwargs):
             contents of files
     """
     try:
+        if dirs is None:
+            dirs = []
         if filespecs is None:
             filespecs = {}
 
@@ -168,6 +173,10 @@ def project(package_name, filespecs=None, cleanup=None, **kwargs):
 
         with open(os.path.join(package_dir, "__init__.py"), "w"):
             pass  # empty file is ok
+
+        for path in dirs:
+            path = _ensure_relative_path(path)
+            os.makedirs(os.path.dirname(path), exist_ok=True)
 
         for (path, contents) in filespecs.items():
             path = _ensure_relative_path(path)
