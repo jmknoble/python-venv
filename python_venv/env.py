@@ -34,6 +34,10 @@ class BaseVirtualEnvironment(object):
             (optional) The name of the virtual environment to create (default:
             inferred).
 
+        env_dir
+            (optional) The path to the virtual environment to create (default:
+            inferred)
+
         dry_run
             (optional) If `True`-ish, say what would be done rather than doing it.
 
@@ -61,6 +65,7 @@ class BaseVirtualEnvironment(object):
         req_scheme,
         basename=None,
         env_name=None,
+        env_dir=None,
         dry_run=False,
         force=False,
         message_prefix=None,
@@ -72,6 +77,7 @@ class BaseVirtualEnvironment(object):
 
         self._basename = basename
         self._env_name = env_name
+        self._env_dir = env_dir
 
         self.dry_run = dry_run
         self.force = force
@@ -145,14 +151,14 @@ class BaseVirtualEnvironment(object):
 
     @property
     def env_dir(self):
-        """Get the directory where this environment lives."""
+        """Get the directory where this environment lives (abstract method)."""
         raise NotImplementedError(
             "This is an abstract base class, please inherit from it."
         )
 
     @property
     def env_description(self):
-        """Get a textual description of this environment."""
+        """Get a textual description of this environment (abstract method)."""
         raise NotImplementedError(
             "This is an abstract base class, please inherit from it."
         )
@@ -196,8 +202,10 @@ class VenvEnvironment(BaseVirtualEnvironment):
 
     @property
     def env_dir(self):
-        """Alias for `~python_venv.env.VenvEnvironment.env_name`:py:attr:."""
-        return self.env_name
+        """Get the directory where this environment lives."""
+        if self._env_dir is None:
+            self._env_dir = self.env_name
+        return self._env_dir
 
     @property
     def full_env_dir(self):
@@ -211,18 +219,24 @@ class VenvEnvironment(BaseVirtualEnvironment):
             self._env_description = f"Python venv at {self.env_name}"
         return self._env_description
 
+    def env_exists(self):
+        """Tell whether this environment already exists."""
+        if os.path.isdir(self.env_dir):
+            return True
+        if os.path.exists(self.env_dir):
+            raise exceptions.EnvOccludedError(
+                f"{self.full_env_dir} exists, but is not a directory"
+            )
+        return False
+
     def create(self, check_preexisting=True):
         """Create this environment."""
         self.progress(f"Creating {self.env_description}")
         self.preflight_checks_for_create()
 
-        if os.path.isdir(self.env_dir):
+        if self.env_exists():
             if not self.dry_run or (self.dry_run and check_preexisting):
                 raise exceptions.EnvExistsError(f"Found preexisting {self.env_dir}")
-        elif os.path.exists(self.env_dir):
-            raise exceptions.EnvOccludedError(
-                f"{self.full_env_dir} exists, but is not a directory"
-            )
 
         runcommand.run_command(
             [self.python, "-m", "venv", self.env_dir],
@@ -269,14 +283,9 @@ class VenvEnvironment(BaseVirtualEnvironment):
         """Remove this environment."""
         self.progress(f"Removing {self.env_description}")
 
-        if not os.path.exists(self.env_dir):
+        if not self.env_exists():
             self.progress(f"Good news!  There is no {self.env_description}.")
             return
-
-        if not os.path.isdir(self.env_dir):
-            raise exceptions.EnvOccludedError(
-                f"{self.full_env_dir} exists, but is not a directory"
-            )
 
         def _retry_readonly(func, path, _excinfo):
             """Make file writable and attempt to remove again."""
@@ -310,6 +319,12 @@ class CondaEnvironment(BaseVirtualEnvironment):
     @property
     def env_dir(self):
         """Get the directory where this environment lives."""
+        if self._env_dir is None:
+            return self.get_conda_env_dir()
+        return self._env_dir
+
+    def get_conda_env_dir(self):
+        """Get the directory where this environment lives, if conda manages it."""
         if self.dry_run:
             return "CONDA_ENV_DIR"
 
@@ -343,12 +358,20 @@ class CondaEnvironment(BaseVirtualEnvironment):
         return self._env_description
 
     def env_exists(self, want=True):
-        """Tell whether this environment (already?) exists."""
-        try:
-            self.env_dir
-        except exceptions.EnvNotFoundError:
-            return False
-        return bool(want) if self.dry_run else True
+        """Tell whether this environment already exists."""
+        if self._env_dir is None:
+            try:
+                self.get_conda_env_dir()
+            except exceptions.EnvNotFoundError:
+                return False
+            return bool(want) if self.dry_run else True
+        if os.path.isdir(self.env_dir):
+            return True
+        if os.path.exists(self.env_dir):
+            raise exceptions.EnvOccludedError(
+                f"{self.env_dir} exists, but is not a directory"
+            )
+        return False
 
     def create(self, check_preexisting=True):
         """Create this environment."""
@@ -363,8 +386,12 @@ class CondaEnvironment(BaseVirtualEnvironment):
         conda_command = [CONDA, "create"]
         if self.force:
             conda_command.append("--yes")
+        if self._env_dir is not None:
+            conda_command.extend(["-p", os.path.abspath(self.env_dir)])
+        else:
+            conda_command.extend(["-n", self.env_name])
         runcommand.run_command(
-            conda_command + ["-n", self.env_name, "python=3"],
+            conda_command + ["python=3"],
             show_trace=True,
             dry_run=self.dry_run,
             env=self.os_environ,
