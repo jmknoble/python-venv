@@ -6,7 +6,9 @@ import unittest
 
 import parameterized  # https://pypi.org/project/parameterized/
 
-from python_venv import env, reqs
+from python_venv import env
+from python_venv import exceptions as exc
+from python_venv import reqs
 from tests.python_venv import contextmgr as ctx
 
 ########################################
@@ -234,7 +236,10 @@ class TestVenvEnvironment(unittest.TestCase):
         dummy_requirements = {reqs.FROM_FILES: ["dummy_requirements.txt"]}
         reqs.REQUIREMENTS = {"dummy_req_scheme": dummy_requirements}
         x = env.VenvEnvironment(
-            "dummy_req_scheme", dry_run=True, env_name=".dummy-venv"
+            "dummy_req_scheme",
+            dry_run=True,
+            env_name=".dummy-venv",
+            ignore_preflight_checks=True,
         )
         with ctx.capture(x.create, check_preexisting=False) as (
             status,
@@ -242,6 +247,113 @@ class TestVenvEnvironment(unittest.TestCase):
             stderr,
         ):
             self.assertTrue(expected_text in stderr)
+
+    @parameterized.parameterized.expand(
+        [
+            ("plain_dry_run", reqs.REQ_SCHEME_PLAIN, True, None, None),
+            ("plain", reqs.REQ_SCHEME_PLAIN, False, None, None),
+            (
+                "plain_dry_run_env_name",
+                reqs.REQ_SCHEME_PLAIN,
+                True,
+                None,
+                ".dummy-venv",
+            ),
+            ("plain_env_name", reqs.REQ_SCHEME_PLAIN, False, None, ".dummy-venv"),
+            ("dev_dry_run", reqs.REQ_SCHEME_DEV, True, None, None),
+            ("dev", reqs.REQ_SCHEME_DEV, False, None, None),
+            ("frozen_dry_run", reqs.REQ_SCHEME_FROZEN, True, None, None),
+            ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None),
+            ("source_dry_run", reqs.REQ_SCHEME_SOURCE, True, None, None),
+            ("source", reqs.REQ_SCHEME_SOURCE, False, None, None),
+            ("package_dry_run", reqs.REQ_SCHEME_PACKAGE, True, "argcomplete", None),
+            ("package", reqs.REQ_SCHEME_PACKAGE, False, "argcomplete", None),
+        ]
+    )
+    def test_PV_ENV_VNV_110_create(self, name, req_scheme, dry_run, basename, env_name):
+        filespecs = {
+            "requirements.txt": "argcomplete",
+            "requirements_frozen.txt": "argcomplete == 1.12.3",
+            os.path.join("dev", "requirements_build.txt"): "",
+            os.path.join("dev", "requirements_dev.txt"): "",
+            os.path.join("dev", "requirements_test.txt"): "parameterized",
+        }
+        with ctx.project("dummy_package", filespecs=filespecs):
+            x = env.VenvEnvironment(
+                req_scheme, basename=basename, env_name=env_name, dry_run=dry_run
+            )
+            x.create(check_preexisting=True)
+
+    @parameterized.parameterized.expand(
+        [
+            ("plain_dry_run", reqs.REQ_SCHEME_PLAIN, True, None, None),
+            ("plain", reqs.REQ_SCHEME_PLAIN, False, None, None),
+            ("dev_dry_run", reqs.REQ_SCHEME_DEV, True, None, None),
+            ("dev", reqs.REQ_SCHEME_DEV, False, None, None),
+            ("frozen_dry_run", reqs.REQ_SCHEME_FROZEN, True, None, None),
+            ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None),
+        ]
+    )
+    def test_PV_ENV_VNV_120_create_missing_reqs(
+        self, name, req_scheme, dry_run, basename, env_name
+    ):
+        with ctx.project("dummy_package"):
+            x = env.VenvEnvironment(
+                req_scheme, basename=basename, env_name=env_name, dry_run=dry_run
+            )
+            with self.assertRaises(exc.MissingRequirementsError):
+                x.create(check_preexisting=True)
+
+    @parameterized.parameterized.expand(
+        [
+            ("plain_dry_run", reqs.REQ_SCHEME_PLAIN, True, None, True, True),
+            ("plain", reqs.REQ_SCHEME_PLAIN, False, None, True, True),
+            (
+                "plain_dry_run_env_name",
+                reqs.REQ_SCHEME_PLAIN,
+                True,
+                ".dummy-venv",
+                True,
+                True,
+            ),
+            ("plain_env_name", reqs.REQ_SCHEME_PLAIN, False, ".dummy-venv", True, True),
+            (
+                "plain_dry_run_no_check_preexisting",
+                reqs.REQ_SCHEME_PLAIN,
+                True,
+                None,
+                False,
+                False,
+            ),
+            (
+                "plain_no_check_preexisting",
+                reqs.REQ_SCHEME_PLAIN,
+                False,
+                None,
+                False,
+                True,
+            ),
+        ]
+    )
+    def test_PV_ENV_VNV_130_create_duplicate(
+        self, name, req_scheme, dry_run, env_name, check_preexisting, should_raise
+    ):
+        filespecs = {
+            "requirements.txt": "argcomplete",
+            "requirements_frozen.txt": "argcomplete == 1.12.3",
+            os.path.join("dev", "requirements_build.txt"): "",
+            os.path.join("dev", "requirements_dev.txt"): "",
+            os.path.join("dev", "requirements_test.txt"): "parameterized",
+        }
+        with ctx.project("dummy_package", filespecs=filespecs):
+            x = env.VenvEnvironment(req_scheme, env_name=env_name, dry_run=False)
+            x.create()
+            x = env.VenvEnvironment(req_scheme, env_name=env_name, dry_run=dry_run)
+            if should_raise:
+                with self.assertRaises(exc.EnvExistsError):
+                    x.create(check_preexisting=check_preexisting)
+            else:
+                x.create(check_preexisting=check_preexisting)
 
     @parameterized.parameterized.expand(
         [
@@ -255,6 +367,44 @@ class TestVenvEnvironment(unittest.TestCase):
         )
         with ctx.capture(x.remove) as (status, _stdout, stderr):
             self.assertTrue(expected_text in stderr)
+
+    @parameterized.parameterized.expand(
+        [
+            ("plain_dry_run", reqs.REQ_SCHEME_PLAIN, True, None, None),
+            ("plain", reqs.REQ_SCHEME_PLAIN, False, None, None),
+            (
+                "plain_dry_run_env_name",
+                reqs.REQ_SCHEME_PLAIN,
+                True,
+                None,
+                ".dummy-venv",
+            ),
+            ("plain_env_name", reqs.REQ_SCHEME_PLAIN, False, None, ".dummy-venv"),
+            ("dev_dry_run", reqs.REQ_SCHEME_DEV, True, None, None),
+            ("dev", reqs.REQ_SCHEME_DEV, False, None, None),
+            ("frozen_dry_run", reqs.REQ_SCHEME_FROZEN, True, None, None),
+            ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None),
+            ("source_dry_run", reqs.REQ_SCHEME_SOURCE, True, None, None),
+            ("source", reqs.REQ_SCHEME_SOURCE, False, None, None),
+            ("package_dry_run", reqs.REQ_SCHEME_PACKAGE, True, "argcomplete", None),
+            ("package", reqs.REQ_SCHEME_PACKAGE, False, "argcomplete", None),
+        ]
+    )
+    def test_PV_ENV_VNV_210_remove(self, name, req_scheme, dry_run, basename, env_name):
+        filespecs = {
+            "requirements.txt": "argcomplete",
+            "requirements_frozen.txt": "argcomplete == 1.12.3",
+            os.path.join("dev", "requirements_build.txt"): "",
+            os.path.join("dev", "requirements_dev.txt"): "",
+            os.path.join("dev", "requirements_test.txt"): "parameterized",
+        }
+        with ctx.project("dummy_package", filespecs=filespecs):
+            x = env.VenvEnvironment(
+                req_scheme, basename=basename, env_name=env_name, dry_run=dry_run
+            )
+            x.remove()  # remove non-existent
+            x.create()
+            x.remove()  # remove existing
 
 
 ########################################
@@ -370,7 +520,10 @@ class TestCondaEnvironment(unittest.TestCase):
         dummy_requirements = {reqs.FROM_FILES: ["dummy_requirements.txt"]}
         reqs.REQUIREMENTS = {"dummy_req_scheme": dummy_requirements}
         x = env.CondaEnvironment(
-            "dummy_req_scheme", dry_run=True, basename="dummy-package"
+            "dummy_req_scheme",
+            dry_run=True,
+            basename="dummy-package",
+            ignore_preflight_checks=True,
         )
         with ctx.capture(x.create, check_preexisting=False) as (
             status,
