@@ -126,6 +126,20 @@ class BaseVirtualEnvironment(object):
             "This is an abstract base class, please inherit from it."
         )
 
+    @property
+    def env_dir(self):
+        """Get the directory where this environment lives."""
+        raise NotImplementedError(
+            "This is an abstract base class, please inherit from it."
+        )
+
+    @property
+    def env_description(self):
+        """Get a textual description of this environment."""
+        raise NotImplementedError(
+            "This is an abstract base class, please inherit from it."
+        )
+
     def create(self, check_preexisting=True):
         """Create the environment (abstract method)."""
         raise NotImplementedError(
@@ -299,19 +313,19 @@ class CondaEnvironment(BaseVirtualEnvironment):
             self._env_description = f"conda environment {self.env_name}"
         return self._env_description
 
-    def env_exists(self):
+    def env_exists(self, want=True):
         """Tell whether this environment (already?) exists."""
         try:
             self.env_dir
         except exceptions.EnvNotFoundError:
             return False
-        return True
+        return bool(want) if self.dry_run else True
 
     def create(self, check_preexisting=True):
         """Create this environment."""
         self.progress(f"Creating {self.env_description}")
 
-        if self.env_exists() and (
+        if self.env_exists(want=False) and (
             not self.dry_run or (self.dry_run and check_preexisting)
         ):
             raise exceptions.EnvExistsError(f"Found preexisting {self.env_name}")
