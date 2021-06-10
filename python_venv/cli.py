@@ -13,6 +13,7 @@ from . import argparsing, completion, env, exceptions, get_version, reqs
 
 STATUS_SUCCESS = 0
 STATUS_FAILURE = 1
+STATUS_HELP = 42
 
 PYTHON = "python3"
 
@@ -372,6 +373,9 @@ def main(*argv):
         pass
 
     args = argparser.parse_args(argv)
+    if args.command is None:
+        argparser.print_usage()
+        return STATUS_HELP
 
     try:
         try:
