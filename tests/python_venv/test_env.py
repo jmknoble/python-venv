@@ -77,12 +77,12 @@ class Test_010_BaseVirtualEnvironment(unittest.TestCase):
         reqs.REQUIREMENTS = self.saved_requirements
 
     def test_PV_ENV_BAS_000_instantiate_empty(self):
-        with self.assertRaises(TypeError) as context:
+        with self.assertRaises(TypeError) as raised:
             env.BaseVirtualEnvironment()
-            msg = context.args[0]
-            self.assertTrue(
-                msg.startswith("__init__() missing 1 required positional argument")
-            )
+        msg = raised.exception.args[0]
+        self.assertTrue(
+            msg.startswith("__init__() missing 1 required positional argument")
+        )
 
     def test_PV_ENV_BAS_001_instantiate(self):
         x = env.BaseVirtualEnvironment("dummy_req_scheme")
@@ -187,12 +187,12 @@ class Test_100_VenvEnvironment(unittest.TestCase):
         reqs.REQUIREMENTS = self.saved_requirements
 
     def test_PV_ENV_VNV_000_instantiate_empty(self):
-        with self.assertRaises(TypeError) as context:
+        with self.assertRaises(TypeError) as raised:
             env.VenvEnvironment()
-            msg = context.args[0]
-            self.assertTrue(
-                msg.startswith("__init__() missing 1 required positional argument")
-            )
+        msg = raised.exception.args[0]
+        self.assertTrue(
+            msg.startswith("__init__() missing 1 required positional argument")
+        )
 
     @parameterized.parameterized.expand(
         [
@@ -717,12 +717,12 @@ class Test_200_CondaEnvironment(unittest.TestCase):
         reqs.REQUIREMENTS = self.saved_requirements
 
     def test_PV_ENV_CDA_000_instantiate_empty(self):
-        with self.assertRaises(TypeError) as context:
+        with self.assertRaises(TypeError) as raised:
             env.CondaEnvironment()
-            msg = context.args[0]
-            self.assertTrue(
-                msg.startswith("__init__() missing 1 required positional argument")
-            )
+        msg = raised.exception.args[0]
+        self.assertTrue(
+            msg.startswith("__init__() missing 1 required positional argument")
+        )
 
     @parameterized.parameterized.expand(
         [

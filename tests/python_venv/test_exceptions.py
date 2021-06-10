@@ -45,5 +45,5 @@ class TestExceptions(unittest.TestCase):
         ]
     )
     def test_PV_XC_010_raise(self, name, exception, catch):
-        with self.assertRaises(catch) as _:
+        with self.assertRaises(catch):
             raise exception
