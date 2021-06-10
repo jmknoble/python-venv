@@ -4,6 +4,7 @@ import os
 import os.path
 import shutil
 import stat
+import sys
 
 from . import exceptions, reqs, runcommand
 
@@ -34,9 +35,9 @@ class BaseVirtualEnvironment(object):
             (optional) The name of the virtual environment to create (default:
             inferred).
 
-        env_dir
-            (optional) The path to the virtual environment to create (default:
-            inferred)
+        env_prefix
+            (optional) The path to the directory in which to create the virtual
+            environment (default: inferred)
 
         dry_run
             (optional) If `True`-ish, say what would be done rather than doing it.
@@ -65,7 +66,7 @@ class BaseVirtualEnvironment(object):
         req_scheme,
         basename=None,
         env_name=None,
-        env_dir=None,
+        env_prefix=None,
         dry_run=False,
         force=False,
         message_prefix=None,
@@ -77,7 +78,7 @@ class BaseVirtualEnvironment(object):
 
         self._basename = basename
         self._env_name = env_name
-        self._env_dir = env_dir
+        self._env_prefix = env_prefix
 
         self.dry_run = dry_run
         self.force = force
@@ -150,11 +151,21 @@ class BaseVirtualEnvironment(object):
         )
 
     @property
+    def env_prefix(self):
+        """Get the environment's containing directory."""
+        if self._env_prefix is None:
+            return ""
+        return self._env_prefix
+
+    @property
     def env_dir(self):
-        """Get the directory where this environment lives (abstract method)."""
-        raise NotImplementedError(
-            "This is an abstract base class, please inherit from it."
-        )
+        """Get the directory where this environment lives."""
+        return os.path.join(self.env_prefix, self.env_name)
+
+    @property
+    def abs_env_dir(self):
+        """Get a full path to this environment."""
+        return os.path.abspath(self.env_dir)
 
     @property
     def env_description(self):
@@ -201,22 +212,10 @@ class VenvEnvironment(BaseVirtualEnvironment):
         return self._env_name
 
     @property
-    def env_dir(self):
-        """Get the directory where this environment lives."""
-        if self._env_dir is None:
-            self._env_dir = self.env_name
-        return self._env_dir
-
-    @property
-    def full_env_dir(self):
-        """Get a full path to this environment."""
-        return os.path.abspath(self.env_dir)
-
-    @property
     def env_description(self):
         """Get a textual description of this environment."""
         if self._env_description is None:
-            self._env_description = f"Python venv at {self.env_name}"
+            self._env_description = f"Python venv at {self.env_dir}"
         return self._env_description
 
     def env_exists(self):
@@ -225,7 +224,7 @@ class VenvEnvironment(BaseVirtualEnvironment):
             return True
         if os.path.exists(self.env_dir):
             raise exceptions.EnvOccludedError(
-                f"{self.full_env_dir} exists, but is not a directory"
+                f"{self.abs_env_dir} exists, but is not a directory"
             )
         return False
 
@@ -243,9 +242,11 @@ class VenvEnvironment(BaseVirtualEnvironment):
             show_trace=True,
             dry_run=self.dry_run,
             env=self.os_environ,
+            stdout=sys.stdout,
+            stderr=sys.stderr,
         )
         verb = "Would have created" if self.dry_run else "Created"
-        self.progress(f"{verb} {self.full_env_dir}", suffix=None)
+        self.progress(f"{verb} {self.abs_env_dir}", suffix=None)
 
         env_bin_dir = os.path.join(self.env_dir, "bin")
         env_python = os.path.join(env_bin_dir, self.python)
@@ -259,11 +260,18 @@ class VenvEnvironment(BaseVirtualEnvironment):
             show_trace=True,
             dry_run=self.dry_run,
             env=self.os_environ,
+            stdout=sys.stdout,
+            stderr=sys.stderr,
         )
 
         for command in reqs.command_requirements(self.requirements, python=env_python):
             runcommand.run_command(
-                command, show_trace=True, dry_run=self.dry_run, env=self.os_environ
+                command,
+                show_trace=True,
+                dry_run=self.dry_run,
+                env=self.os_environ,
+                stdout=sys.stdout,
+                stderr=sys.stderr,
             )
 
         if reqs.requirements_need_pip(self.requirements):
@@ -273,6 +281,8 @@ class VenvEnvironment(BaseVirtualEnvironment):
                 show_trace=True,
                 dry_run=self.dry_run,
                 env=self.os_environ,
+                stdout=sys.stdout,
+                stderr=sys.stderr,
             )
 
         self.progress("Done.")
@@ -293,7 +303,7 @@ class VenvEnvironment(BaseVirtualEnvironment):
             func(path)
 
         verb = "Would remove" if self.dry_run else "Removing"
-        self.progress(f"{verb} {self.full_env_dir} and all its contents")
+        self.progress(f"{verb} {self.abs_env_dir} and all its contents")
 
         if not self.dry_run:
             shutil.rmtree(self.env_dir, onerror=_retry_readonly)
@@ -316,12 +326,18 @@ class CondaEnvironment(BaseVirtualEnvironment):
                 self._env_name += DEV_SUFFIX
         return self._env_name
 
+    def have_env_prefix(self):
+        """
+        Tell whether `~python_venv.env.CondaEnvironment.env_prefix`:py:attr: is set.
+        """
+        return bool(self.env_prefix)
+
     @property
     def env_dir(self):
         """Get the directory where this environment lives."""
-        if self._env_dir is None:
+        if not self.have_env_prefix():
             return self.get_conda_env_dir()
-        return self._env_dir
+        return os.path.join(self.env_prefix, self.env_name)
 
     def get_conda_env_dir(self):
         """Get the directory where this environment lives, if conda manages it."""
@@ -340,6 +356,8 @@ class CondaEnvironment(BaseVirtualEnvironment):
             if line.startswith("# ") or not line:
                 continue
             parts = line.split(maxsplit=1)
+            if len(parts) < 2:
+                continue
             if parts[0] == self.env_name:
                 env_dir = parts[1]
                 if env_dir.startswith("* "):
@@ -359,7 +377,7 @@ class CondaEnvironment(BaseVirtualEnvironment):
 
     def env_exists(self, want=True):
         """Tell whether this environment already exists."""
-        if self._env_dir is None:
+        if not self.have_env_prefix():
             try:
                 self.get_conda_env_dir()
             except exceptions.EnvNotFoundError:
@@ -383,11 +401,11 @@ class CondaEnvironment(BaseVirtualEnvironment):
         ):
             raise exceptions.EnvExistsError(f"Found preexisting {self.env_name}")
 
-        conda_command = [CONDA, "create"]
+        conda_command = [CONDA, "create", "--quiet"]
         if self.force:
             conda_command.append("--yes")
-        if self._env_dir is not None:
-            conda_command.extend(["-p", os.path.abspath(self.env_dir)])
+        if self.have_env_prefix():
+            conda_command.extend(["-p", self.abs_env_dir])
         else:
             conda_command.extend(["-n", self.env_name])
         runcommand.run_command(
@@ -395,6 +413,8 @@ class CondaEnvironment(BaseVirtualEnvironment):
             show_trace=True,
             dry_run=self.dry_run,
             env=self.os_environ,
+            stdout=sys.stdout,
+            stderr=sys.stderr,
         )
 
         env_bin_dir = os.path.join(self.env_dir, "bin")  # raises if not found
@@ -404,7 +424,12 @@ class CondaEnvironment(BaseVirtualEnvironment):
 
         for command in reqs.command_requirements(self.requirements, python=env_python):
             runcommand.run_command(
-                command, show_trace=True, dry_run=self.dry_run, env=self.os_environ
+                command,
+                show_trace=True,
+                dry_run=self.dry_run,
+                env=self.os_environ,
+                stdout=sys.stdout,
+                stderr=sys.stderr,
             )
 
         if reqs.requirements_need_pip(self.requirements):
@@ -414,6 +439,8 @@ class CondaEnvironment(BaseVirtualEnvironment):
                 show_trace=True,
                 dry_run=self.dry_run,
                 env=self.os_environ,
+                stdout=sys.stdout,
+                stderr=sys.stderr,
             )
 
         self.progress("Done.")
@@ -430,13 +457,19 @@ class CondaEnvironment(BaseVirtualEnvironment):
             self.progress(f"Good news!  There is no {self.env_description}.")
             return
 
-        conda_command = [CONDA, "env", "remove"]
+        conda_command = [CONDA, "env", "remove", "--quiet"]
         if self.force:
             conda_command.append("--yes")
+        if self.have_env_prefix():
+            conda_command.extend(["-p", self.abs_env_dir])
+        else:
+            conda_command.extend(["-n", self.env_name])
         runcommand.run_command(
-            conda_command + ["-n", self.env_name],
+            conda_command,
             show_trace=True,
             dry_run=self.dry_run,
             env=self.os_environ,
+            stdout=sys.stdout,
+            stderr=sys.stderr,
         )
         self.progress("Done.")
