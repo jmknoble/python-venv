@@ -2,6 +2,7 @@
 
 import os
 import os.path
+import subprocess
 import unittest
 
 import parameterized  # https://pypi.org/project/parameterized/
@@ -12,10 +13,49 @@ from python_venv import reqs
 from tests.python_venv import contextmgr as ctx
 
 ########################################
+
+
+HERE = os.getcwd()
+
+FLAG_TEST_WITHOUT_CONDA = "TEST_WITHOUT_CONDA.tmp"
+FLAG_TEST_WITH_LONG_RUNNING = "TEST_WITH_LONG_RUNNING.tmp"
+FLAG_TEST_WITH_OUTPUT = "TEST_WITH_OUTPUT.tmp"
+
+SKIP_CONDA_MESSAGE = "requires conda"
+SKIP_LONG_RUNNING_MESSAGE = (
+    f"takes a long time (touch {FLAG_TEST_WITH_LONG_RUNNING} to run anyway)"
+)
+
+
+def _have_conda():
+    try:
+        subprocess.call(
+            ["conda", "--version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+        )
+    except FileNotFoundError:
+        return False
+    return True
+
+
+def _should_run_conda_tests():
+    return _have_conda and not os.path.exists(
+        os.path.join(HERE, FLAG_TEST_WITHOUT_CONDA)
+    )
+
+
+def _should_run_long_tests():
+    return os.path.exists(os.path.join(HERE, FLAG_TEST_WITH_LONG_RUNNING))
+
+
+def _should_suppress_output():
+    return not os.path.exists(os.path.join(HERE, FLAG_TEST_WITH_OUTPUT))
+
+
+########################################
 # Tests
 
 
-class TestEnv(unittest.TestCase):
+class Test_000_Env(unittest.TestCase):
     def setUp(self):
         pass
 
@@ -29,7 +69,7 @@ class TestEnv(unittest.TestCase):
         _ = env.DEV_SUFFIX
 
 
-class TestBaseVirtualEnvironment(unittest.TestCase):
+class Test_010_BaseVirtualEnvironment(unittest.TestCase):
     def setUp(self):
         self.saved_requirements = reqs.REQUIREMENTS
 
@@ -61,6 +101,12 @@ class TestBaseVirtualEnvironment(unittest.TestCase):
             ("python", {"python": "dummy_python"}, "python", "dummy_python"),
             ("basename", {"basename": "dummy_basename"}, "_basename", "dummy_basename"),
             ("env_name", {"env_name": "dummy_env_name"}, "_env_name", "dummy_env_name"),
+            (
+                "env_prefix",
+                {"env_prefix": "dummy_env_prefix"},
+                "_env_prefix",
+                "dummy_env_prefix",
+            ),
         ]
     )
     def test_PV_ENV_BAS_002_instantiate_kwargs(self, name, kwargs, attr, value):
@@ -93,10 +139,26 @@ class TestBaseVirtualEnvironment(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             x.env_name
 
+    @parameterized.parameterized.expand(
+        [
+            ("default", None, ""),
+            ("specified", "dummy-prefix", "dummy-prefix"),
+        ]
+    )
+    def test_PV_ENV_BAS_045_env_prefix(self, name, env_prefix, expected):
+        kwargs = {} if env_prefix is None else {"env_prefix": env_prefix}
+        x = env.BaseVirtualEnvironment("dummy_req_scheme", **kwargs)
+        self.assertEqual(x.env_prefix, expected)
+
     def test_PV_ENV_BAS_050_abstract_env_dir(self):
         x = env.BaseVirtualEnvironment("dummy_req_scheme")
         with self.assertRaises(NotImplementedError):
             x.env_dir
+
+    def test_PV_ENV_BAS_055_abstract_abs_env_dir(self):
+        x = env.BaseVirtualEnvironment("dummy_req_scheme")
+        with self.assertRaises(NotImplementedError):
+            x.abs_env_dir
 
     def test_PV_ENV_BAS_060_abstract_env_description(self):
         x = env.BaseVirtualEnvironment("dummy_req_scheme")
@@ -117,7 +179,7 @@ class TestBaseVirtualEnvironment(unittest.TestCase):
 ########################################
 
 
-class TestVenvEnvironment(unittest.TestCase):
+class Test_100_VenvEnvironment(unittest.TestCase):
     def setUp(self):
         self.saved_requirements = reqs.REQUIREMENTS
 
@@ -145,6 +207,12 @@ class TestVenvEnvironment(unittest.TestCase):
             ("python", {"python": "dummy_python"}, "python", "dummy_python"),
             ("basename", {"basename": "dummy_basename"}, "_basename", "dummy_basename"),
             ("env_name", {"env_name": "dummy_env_name"}, "_env_name", "dummy_env_name"),
+            (
+                "env_prefix",
+                {"env_prefix": "dummy_env_prefix"},
+                "_env_prefix",
+                "dummy_env_prefix",
+            ),
         ]
     )
     def test_PV_ENV_VNV_002_instantiate_kwargs(self, name, kwargs, attr, value):
@@ -185,34 +253,82 @@ class TestVenvEnvironment(unittest.TestCase):
 
     @parameterized.parameterized.expand(
         [
-            ("default", None, ".venv"),
-            ("specified", "dummy-env", "dummy-env"),
+            ("default", None, None, ".venv"),
+            ("specified", "dummy-env", None, "dummy-env"),
+            (
+                "with_prefix",
+                None,
+                "dummy-prefix",
+                os.path.join("dummy-prefix", ".venv"),
+            ),
+            (
+                "specified_with_prefix",
+                "dummy-env",
+                "dummy-prefix",
+                os.path.join("dummy-prefix", "dummy-env"),
+            ),
         ]
     )
-    def test_PV_ENV_VNV_050_env_dir(self, name, env_name, expected):
-        kwargs = {} if env_name is None else {"env_name": env_name}
+    def test_PV_ENV_VNV_050_env_dir(self, name, env_name, env_prefix, expected):
+        kwargs = {}
+        if env_name is not None:
+            kwargs["env_name"] = env_name
+        if env_prefix is not None:
+            kwargs["env_prefix"] = env_prefix
         x = env.VenvEnvironment("dummy_req_scheme", **kwargs)
         self.assertEqual(x.env_dir, expected)
 
     @parameterized.parameterized.expand(
         [
-            ("default", None, os.path.join(os.getcwd(), ".venv")),
-            ("specified", "dummy-env", os.path.join(os.getcwd(), "dummy-env")),
+            ("default", None, None, os.path.join(os.getcwd(), ".venv")),
+            ("specified", "dummy-env", None, os.path.join(os.getcwd(), "dummy-env")),
+            (
+                "with_prefix",
+                None,
+                "dummy-prefix",
+                os.path.join(os.getcwd(), "dummy-prefix", ".venv"),
+            ),
+            (
+                "specified_with_prefix",
+                "dummy-env",
+                "dummy-prefix",
+                os.path.join(os.getcwd(), "dummy-prefix", "dummy-env"),
+            ),
         ]
     )
-    def test_PV_ENV_VNV_051_full_env_dir(self, name, env_name, expected):
-        kwargs = {} if env_name is None else {"env_name": env_name}
+    def test_PV_ENV_VNV_051_abs_env_dir(self, name, env_name, env_prefix, expected):
+        kwargs = {}
+        if env_name is not None:
+            kwargs["env_name"] = env_name
+        if env_prefix is not None:
+            kwargs["env_prefix"] = env_prefix
         x = env.VenvEnvironment("dummy_req_scheme", **kwargs)
-        self.assertEqual(x.full_env_dir, expected)
+        self.assertEqual(x.abs_env_dir, expected)
 
     @parameterized.parameterized.expand(
         [
-            ("default", None, ".venv"),
-            ("specified", "dummy-env", "dummy-env"),
+            ("default", None, None, ".venv"),
+            ("specified", "dummy-env", None, "dummy-env"),
+            (
+                "with_prefix",
+                None,
+                "dummy-prefix",
+                os.path.join("dummy-prefix", ".venv"),
+            ),
+            (
+                "specified_with_prefix",
+                "dummy-env",
+                "dummy-prefix",
+                os.path.join("dummy-prefix", "dummy-env"),
+            ),
         ]
     )
-    def test_PV_ENV_VNV_060_env_description(self, name, env_name, expected):
-        kwargs = {} if env_name is None else {"env_name": env_name}
+    def test_PV_ENV_VNV_060_env_description(self, name, env_name, env_prefix, expected):
+        kwargs = {}
+        if env_name is not None:
+            kwargs["env_name"] = env_name
+        if env_prefix is not None:
+            kwargs["env_prefix"] = env_prefix
         x = env.VenvEnvironment("dummy_req_scheme", **kwargs)
         x.env_description
         self.assertTrue(x.env_description.endswith(expected))
@@ -250,6 +366,30 @@ class TestVenvEnvironment(unittest.TestCase):
 
     @parameterized.parameterized.expand(
         [
+            ("dry_run_text", "[DRY-RUN]"),
+            ("remove_msg", "Removing Python venv at .dummy-venv"),
+        ]
+    )
+    def test_PV_ENV_VNV_200_remove_dry_run(self, name, expected_text):
+        x = env.VenvEnvironment(
+            "dummy_req_scheme", dry_run=True, env_name=".dummy-venv"
+        )
+        with ctx.capture(x.remove) as (status, _stdout, stderr):
+            self.assertTrue(expected_text in stderr)
+
+
+########################################
+
+
+class Test_110_VenvCreate(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+
+    @parameterized.parameterized.expand(
+        [
             ("plain_dry_run", reqs.REQ_SCHEME_PLAIN, True, None, None),
             ("plain", reqs.REQ_SCHEME_PLAIN, False, None, None),
             (
@@ -282,7 +422,85 @@ class TestVenvEnvironment(unittest.TestCase):
             x = env.VenvEnvironment(
                 req_scheme, basename=basename, env_name=env_name, dry_run=dry_run
             )
-            x.create(check_preexisting=True)
+            if not _should_suppress_output():
+                x.create(check_preexisting=True)
+            else:
+                original_stderr = None
+                with ctx.capture_to_file(x.create, check_preexisting=True) as (
+                    _status,
+                    _stdout,
+                    stderr,
+                ):
+                    original_stderr = stderr
+                testable_stderr = original_stderr.lower()
+                if "error" in testable_stderr:
+                    print(original_stderr, file=stderr)
+                self.assertNotIn("error", testable_stderr)
+
+    @parameterized.parameterized.expand(
+        [
+            ("plain_dry_run", reqs.REQ_SCHEME_PLAIN, True, None, None, "dummy-prefix"),
+            ("plain", reqs.REQ_SCHEME_PLAIN, False, None, None, "dummy-prefix"),
+            ("plain_curdir", reqs.REQ_SCHEME_PLAIN, False, None, None, os.curdir),
+            (
+                "plain_dry_run_env_name",
+                reqs.REQ_SCHEME_PLAIN,
+                True,
+                None,
+                ".dummy-venv",
+                "dummy-prefix",
+            ),
+            (
+                "plain_env_name",
+                reqs.REQ_SCHEME_PLAIN,
+                False,
+                None,
+                ".dummy-venv",
+                "dummy-prefix",
+            ),
+            (
+                "plain_nonexistent",
+                reqs.REQ_SCHEME_PLAIN,
+                False,
+                None,
+                None,
+                "surprising-prefix",
+            ),
+        ]
+    )
+    def test_PV_ENV_VNV_115_create_with_prefix(
+        self, name, req_scheme, dry_run, basename, env_name, env_prefix
+    ):
+        dirs = ["dummy-prefix"]
+        filespecs = {
+            "requirements.txt": "argcomplete",
+            "requirements_frozen.txt": "argcomplete == 1.12.3",
+            os.path.join("dev", "requirements_build.txt"): "",
+            os.path.join("dev", "requirements_dev.txt"): "",
+            os.path.join("dev", "requirements_test.txt"): "parameterized",
+        }
+        with ctx.project("dummy_package", dirs=dirs, filespecs=filespecs):
+            x = env.VenvEnvironment(
+                req_scheme,
+                basename=basename,
+                env_name=env_name,
+                env_prefix=env_prefix,
+                dry_run=dry_run,
+            )
+            if not _should_suppress_output():
+                x.create(check_preexisting=True)
+            else:
+                original_stderr = None
+                with ctx.capture_to_file(x.create, check_preexisting=True) as (
+                    _status,
+                    _stdout,
+                    stderr,
+                ):
+                    original_stderr = stderr
+                testable_stderr = original_stderr.lower()
+                if "error" in testable_stderr:
+                    print(original_stderr, file=stderr)
+                self.assertNotIn("error", testable_stderr)
 
     @parameterized.parameterized.expand(
         [
@@ -302,7 +520,15 @@ class TestVenvEnvironment(unittest.TestCase):
                 req_scheme, basename=basename, env_name=env_name, dry_run=dry_run
             )
             with self.assertRaises(exc.MissingRequirementsError):
-                x.create(check_preexisting=True)
+                if not _should_suppress_output():
+                    x.create(check_preexisting=True)
+                else:
+                    with ctx.capture_to_file(x.create, check_preexisting=True) as (
+                        _status,
+                        _stdout,
+                        _stderr,
+                    ):
+                        pass
 
     @parameterized.parameterized.expand(
         [
@@ -347,50 +573,97 @@ class TestVenvEnvironment(unittest.TestCase):
         }
         with ctx.project("dummy_package", filespecs=filespecs):
             x = env.VenvEnvironment(req_scheme, env_name=env_name, dry_run=False)
-            x.create()
+            if not _should_suppress_output():
+                x.create()
+            else:
+                with ctx.capture_to_file(x.create) as (_status, _stdout, _stderr):
+                    pass
             x = env.VenvEnvironment(req_scheme, env_name=env_name, dry_run=dry_run)
             if should_raise:
                 with self.assertRaises(exc.EnvExistsError):
-                    x.create(check_preexisting=check_preexisting)
+                    if not _should_suppress_output():
+                        x.create(check_preexisting=check_preexisting)
+                    else:
+                        with ctx.capture_to_file(
+                            x.create, check_preexisting=check_preexisting
+                        ) as (_status, _stdout, _stderr):
+                            pass
             else:
-                x.create(check_preexisting=check_preexisting)
+                if not _should_suppress_output():
+                    x.create(check_preexisting=check_preexisting)
+                else:
+                    original_stderr = None
+                    with ctx.capture_to_file(
+                        x.create, check_preexisting=check_preexisting
+                    ) as (_status, _stdout, stderr):
+                        original_stderr = stderr
+                    testable_stderr = original_stderr.lower()
+                    if "error" in testable_stderr:
+                        print(original_stderr, file=stderr)
+                    self.assertNotIn("error", testable_stderr)
+
+
+########################################
+
+
+class Test_120_VenvRemove(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
 
     @parameterized.parameterized.expand(
         [
-            ("dry_run_text", "[DRY-RUN]"),
-            ("remove_msg", "Removing Python venv at .dummy-venv"),
-        ]
-    )
-    def test_PV_ENV_VNV_200_remove_dry_run(self, name, expected_text):
-        x = env.VenvEnvironment(
-            "dummy_req_scheme", dry_run=True, env_name=".dummy-venv"
-        )
-        with ctx.capture(x.remove) as (status, _stdout, stderr):
-            self.assertTrue(expected_text in stderr)
-
-    @parameterized.parameterized.expand(
-        [
-            ("plain_dry_run", reqs.REQ_SCHEME_PLAIN, True, None, None),
-            ("plain", reqs.REQ_SCHEME_PLAIN, False, None, None),
+            ("plain_dry_run", reqs.REQ_SCHEME_PLAIN, True, None, None, None),
+            ("plain", reqs.REQ_SCHEME_PLAIN, False, None, None, None),
             (
                 "plain_dry_run_env_name",
                 reqs.REQ_SCHEME_PLAIN,
                 True,
                 None,
                 ".dummy-venv",
+                None,
             ),
-            ("plain_env_name", reqs.REQ_SCHEME_PLAIN, False, None, ".dummy-venv"),
-            ("dev_dry_run", reqs.REQ_SCHEME_DEV, True, None, None),
-            ("dev", reqs.REQ_SCHEME_DEV, False, None, None),
-            ("frozen_dry_run", reqs.REQ_SCHEME_FROZEN, True, None, None),
-            ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None),
-            ("source_dry_run", reqs.REQ_SCHEME_SOURCE, True, None, None),
-            ("source", reqs.REQ_SCHEME_SOURCE, False, None, None),
-            ("package_dry_run", reqs.REQ_SCHEME_PACKAGE, True, "argcomplete", None),
-            ("package", reqs.REQ_SCHEME_PACKAGE, False, "argcomplete", None),
+            ("plain_env_name", reqs.REQ_SCHEME_PLAIN, False, None, ".dummy-venv", None),
+            ("prefix_dry_run", reqs.REQ_SCHEME_PLAIN, True, None, None, "dummy-prefix"),
+            ("prefix", reqs.REQ_SCHEME_PLAIN, False, None, None, "dummy-prefix"),
+            (
+                "prefix_dry_run_env_name",
+                reqs.REQ_SCHEME_PLAIN,
+                True,
+                None,
+                ".dummy-venv",
+                "dummy-prefix",
+            ),
+            (
+                "prefix_env_name",
+                reqs.REQ_SCHEME_PLAIN,
+                False,
+                None,
+                ".dummy-venv",
+                "dummy-prefix",
+            ),
+            ("dev_dry_run", reqs.REQ_SCHEME_DEV, True, None, None, None),
+            ("dev", reqs.REQ_SCHEME_DEV, False, None, None, None),
+            ("frozen_dry_run", reqs.REQ_SCHEME_FROZEN, True, None, None, None),
+            ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None, None),
+            ("source_dry_run", reqs.REQ_SCHEME_SOURCE, True, None, None, None),
+            ("source", reqs.REQ_SCHEME_SOURCE, False, None, None, None),
+            (
+                "package_dry_run",
+                reqs.REQ_SCHEME_PACKAGE,
+                True,
+                "argcomplete",
+                None,
+                None,
+            ),
+            ("package", reqs.REQ_SCHEME_PACKAGE, False, "argcomplete", None, None),
         ]
     )
-    def test_PV_ENV_VNV_210_remove(self, name, req_scheme, dry_run, basename, env_name):
+    def test_PV_ENV_VNV_210_remove(
+        self, name, req_scheme, dry_run, basename, env_name, env_prefix
+    ):
         filespecs = {
             "requirements.txt": "argcomplete",
             "requirements_frozen.txt": "argcomplete == 1.12.3",
@@ -400,17 +673,43 @@ class TestVenvEnvironment(unittest.TestCase):
         }
         with ctx.project("dummy_package", filespecs=filespecs):
             x = env.VenvEnvironment(
-                req_scheme, basename=basename, env_name=env_name, dry_run=dry_run
+                req_scheme,
+                basename=basename,
+                env_name=env_name,
+                env_prefix=env_prefix,
+                dry_run=dry_run,
             )
-            x.remove()  # remove non-existent
-            x.create()
-            x.remove()  # remove existing
+            y = env.VenvEnvironment(
+                req_scheme,
+                basename=basename,
+                env_name=env_name,
+                env_prefix=env_prefix,
+                dry_run=False,
+            )
+            if not _should_suppress_output():
+                x.remove()  # remove non-existent
+                y.create()
+                x.remove()  # remove existing
+            else:
+                original_stderrs = []
+                with ctx.capture_to_file(x.remove) as (_status, _stdout, stderr):
+                    original_stderrs.append(stderr)
+                with ctx.capture_to_file(x.create) as (_status, _stdout, stderr):
+                    original_stderrs.append(stderr)
+                with ctx.capture_to_file(x.remove) as (_status, _stdout, stderr):
+                    original_stderrs.append(stderr)
+                testable_stderrs = [x.lower() for x in original_stderrs]
+                for (i, text) in enumerate(testable_stderrs):
+                    if "error" in text:
+                        print(original_stderrs[i], file=stderr)
+                    self.assertNotIn("error", text)
 
 
 ########################################
 
 
-class TestCondaEnvironment(unittest.TestCase):
+@unittest.skipUnless(_should_run_conda_tests(), SKIP_CONDA_MESSAGE)
+class Test_200_CondaEnvironment(unittest.TestCase):
     def setUp(self):
         self.saved_requirements = reqs.REQUIREMENTS
 
@@ -438,6 +737,12 @@ class TestCondaEnvironment(unittest.TestCase):
             ("python", {"python": "dummy_python"}, "python", "dummy_python"),
             ("basename", {"basename": "dummy_basename"}, "_basename", "dummy_basename"),
             ("env_name", {"env_name": "dummy_env_name"}, "_env_name", "dummy_env_name"),
+            (
+                "env_prefix",
+                {"env_prefix": "dummy_env_prefix"},
+                "_env_prefix",
+                "dummy_env_prefix",
+            ),
         ]
     )
     def test_PV_ENV_CDA_002_instantiate_kwargs(self, name, kwargs, attr, value):
@@ -488,9 +793,77 @@ class TestCondaEnvironment(unittest.TestCase):
         x = env.CondaEnvironment(req_scheme, **kwargs)
         self.assertEqual(x.env_name, expected)
 
-    def test_PV_ENV_CDA_050_env_dir_dry_run(self):
-        x = env.CondaEnvironment("dummy_req_scheme", dry_run=True)
-        self.assertEqual(x.env_dir, "CONDA_ENV_DIR")
+    @parameterized.parameterized.expand(
+        [
+            ("default", None, None, None, "CONDA_ENV_DIR"),
+            ("specified", None, "dummy-env", None, "CONDA_ENV_DIR"),
+            (
+                "with_prefix",
+                "dummy-basename",
+                None,
+                "dummy-prefix",
+                os.path.join("dummy-prefix", "dummy-basename"),
+            ),
+            (
+                "specified_with_prefix",
+                "dummy-basename",
+                "dummy-env",
+                "dummy-prefix",
+                os.path.join("dummy-prefix", "dummy-env"),
+            ),
+        ]
+    )
+    def test_PV_ENV_CDA_050_env_dir_dry_run(
+        self, name, basename, env_name, env_prefix, expected
+    ):
+        kwargs = {}
+        if basename is not None:
+            kwargs["basename"] = basename
+        if env_name is not None:
+            kwargs["env_name"] = env_name
+        if env_prefix is not None:
+            kwargs["env_prefix"] = env_prefix
+        x = env.CondaEnvironment("dummy_req_scheme", dry_run=True, **kwargs)
+        self.assertEqual(x.env_dir, expected)
+
+    @parameterized.parameterized.expand(
+        [
+            ("default", None, None, None, os.path.join(os.getcwd(), "CONDA_ENV_DIR")),
+            (
+                "specified",
+                None,
+                "dummy-env",
+                None,
+                os.path.join(os.getcwd(), "CONDA_ENV_DIR"),
+            ),
+            (
+                "with_prefix",
+                "dummy-basename",
+                None,
+                "dummy-prefix",
+                os.path.join(os.getcwd(), "dummy-prefix", "dummy-basename"),
+            ),
+            (
+                "specified_with_prefix",
+                "dummy-basename",
+                "dummy-env",
+                "dummy-prefix",
+                os.path.join(os.getcwd(), "dummy-prefix", "dummy-env"),
+            ),
+        ]
+    )
+    def test_PV_ENV_CDA_051_abs_env_dir_dry_run(
+        self, name, basename, env_name, env_prefix, expected
+    ):
+        kwargs = {}
+        if basename is not None:
+            kwargs["basename"] = basename
+        if env_name is not None:
+            kwargs["env_name"] = env_name
+        if env_prefix is not None:
+            kwargs["env_prefix"] = env_prefix
+        x = env.CondaEnvironment("dummy_req_scheme", dry_run=True, **kwargs)
+        self.assertEqual(x.abs_env_dir, expected)
 
     @parameterized.parameterized.expand(
         [
@@ -507,7 +880,7 @@ class TestCondaEnvironment(unittest.TestCase):
         [
             ("dry_run_text", "[DRY-RUN]"),
             ("create_msg", "Creating conda environment dummy-package"),
-            ("create_venv", "+ conda create -n dummy-package"),
+            ("create_venv", "+ conda create"),
             ("install_msg", "Installing dummy_req_scheme requirements"),
             (
                 "pip_install",
@@ -544,3 +917,274 @@ class TestCondaEnvironment(unittest.TestCase):
         )
         with ctx.capture(x.remove) as (status, _stdout, stderr):
             self.assertTrue(expected_text in stderr)
+
+
+########################################
+
+
+@unittest.skipUnless(_should_run_conda_tests(), SKIP_CONDA_MESSAGE)
+class Test_210_CondaCreate(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+
+    @parameterized.parameterized.expand(
+        [
+            ("plain_dry_run", reqs.REQ_SCHEME_PLAIN, True, None, None),
+            ("plain", reqs.REQ_SCHEME_PLAIN, False, None, None),
+            (
+                "plain_dry_run_env_name",
+                reqs.REQ_SCHEME_PLAIN,
+                True,
+                None,
+                "dummy-env",
+            ),
+            ("plain_env_name", reqs.REQ_SCHEME_PLAIN, False, None, "dummy-env"),
+            ("dev_dry_run", reqs.REQ_SCHEME_DEV, True, None, None),
+            ("dev", reqs.REQ_SCHEME_DEV, False, None, None),
+            ("frozen_dry_run", reqs.REQ_SCHEME_FROZEN, True, None, None),
+            ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None),
+            ("source_dry_run", reqs.REQ_SCHEME_SOURCE, True, None, None),
+            ("source", reqs.REQ_SCHEME_SOURCE, False, None, None),
+            ("package_dry_run", reqs.REQ_SCHEME_PACKAGE, True, "argcomplete", None),
+            ("package", reqs.REQ_SCHEME_PACKAGE, False, "argcomplete", None),
+        ]
+    )
+    @unittest.skipUnless(_should_run_long_tests(), SKIP_LONG_RUNNING_MESSAGE)
+    def test_PV_ENV_CDA_110_create(self, name, req_scheme, dry_run, basename, env_name):
+        env_prefix = ".conda-env"  # Must use env_prefix to avoid polluting conda envs
+        dirs = [env_prefix]
+        filespecs = {
+            "requirements.txt": "argcomplete",
+            "requirements_frozen.txt": "argcomplete == 1.12.3",
+            os.path.join("dev", "requirements_build.txt"): "",
+            os.path.join("dev", "requirements_dev.txt"): "",
+            os.path.join("dev", "requirements_test.txt"): "parameterized",
+        }
+        with ctx.project("dummy_package", dirs=dirs, filespecs=filespecs):
+            x = env.CondaEnvironment(
+                req_scheme,
+                basename=basename,
+                env_name=env_name,
+                env_prefix=env_prefix,
+                dry_run=dry_run,
+                force=True,
+            )
+            if not _should_suppress_output():
+                x.create(check_preexisting=True)
+            else:
+                original_stderr = None
+                with ctx.capture_to_file(x.create, check_preexisting=True) as (
+                    _status,
+                    _stdout,
+                    stderr,
+                ):
+                    original_stderr = stderr
+                testable_stderr = original_stderr.lower()
+                if "error" in testable_stderr:
+                    print(original_stderr, file=stderr)
+                self.assertNotIn("error", testable_stderr)
+
+    @parameterized.parameterized.expand(
+        [
+            ("plain_dry_run", reqs.REQ_SCHEME_PLAIN, True, None, None),
+            ("plain", reqs.REQ_SCHEME_PLAIN, False, None, None),
+            ("dev_dry_run", reqs.REQ_SCHEME_DEV, True, None, None),
+            ("dev", reqs.REQ_SCHEME_DEV, False, None, None),
+            ("frozen_dry_run", reqs.REQ_SCHEME_FROZEN, True, None, None),
+            ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None),
+        ]
+    )
+    def test_PV_ENV_CDA_120_create_missing_reqs(
+        self, name, req_scheme, dry_run, basename, env_name
+    ):
+        env_prefix = ".conda-env"
+        dirs = [env_prefix]
+        with ctx.project("dummy_package", dirs=dirs):
+            x = env.CondaEnvironment(
+                req_scheme,
+                basename=basename,
+                env_name=env_name,
+                env_prefix=env_prefix,
+                dry_run=dry_run,
+                force=True,
+            )
+            with self.assertRaises(exc.MissingRequirementsError):
+                if not _should_suppress_output():
+                    x.create(check_preexisting=True)
+                else:
+                    with ctx.capture_to_file(x.create, check_preexisting=True) as (
+                        _status,
+                        _stdout,
+                        _stderr,
+                    ):
+                        pass
+
+    @parameterized.parameterized.expand(
+        [
+            ("plain_dry_run", reqs.REQ_SCHEME_PLAIN, True, None, True, True),
+            ("plain", reqs.REQ_SCHEME_PLAIN, False, None, True, True),
+            (
+                "plain_dry_run_env_name",
+                reqs.REQ_SCHEME_PLAIN,
+                True,
+                "dummy-env",
+                True,
+                True,
+            ),
+            ("plain_env_name", reqs.REQ_SCHEME_PLAIN, False, "dummy-env", True, True),
+            (
+                "plain_dry_run_no_check_preexisting",
+                reqs.REQ_SCHEME_PLAIN,
+                True,
+                None,
+                False,
+                False,
+            ),
+            (
+                "plain_no_check_preexisting",
+                reqs.REQ_SCHEME_PLAIN,
+                False,
+                None,
+                False,
+                True,
+            ),
+        ]
+    )
+    @unittest.skipUnless(_should_run_long_tests(), SKIP_LONG_RUNNING_MESSAGE)
+    def test_PV_ENV_CDA_130_create_duplicate(
+        self, name, req_scheme, dry_run, env_name, check_preexisting, should_raise
+    ):
+        env_prefix = ".conda-env"
+        dirs = [env_prefix]
+        filespecs = {
+            "requirements.txt": "argcomplete",
+            "requirements_frozen.txt": "argcomplete == 1.12.3",
+            os.path.join("dev", "requirements_build.txt"): "",
+            os.path.join("dev", "requirements_dev.txt"): "",
+            os.path.join("dev", "requirements_test.txt"): "parameterized",
+        }
+        with ctx.project("dummy_package", dirs=dirs, filespecs=filespecs):
+            x = env.CondaEnvironment(
+                req_scheme,
+                env_name=env_name,
+                env_prefix=env_prefix,
+                dry_run=False,
+                force=True,
+            )
+            if not _should_suppress_output():
+                x.create()
+            else:
+                with ctx.capture_to_file(x.create) as (_status, _stdout, _stderr):
+                    pass
+            x = env.CondaEnvironment(
+                req_scheme,
+                env_name=env_name,
+                env_prefix=env_prefix,
+                dry_run=dry_run,
+                force=True,
+            )
+            if should_raise:
+                with self.assertRaises(exc.EnvExistsError):
+                    if not _should_suppress_output():
+                        x.create(check_preexisting=check_preexisting)
+                    else:
+                        with ctx.capture_to_file(
+                            x.create, check_preexisting=check_preexisting
+                        ) as (_status, _stdout, _stderr):
+                            pass
+            else:
+                if not _should_suppress_output():
+                    x.create(check_preexisting=check_preexisting)
+                else:
+                    original_stderr = None
+                    with ctx.capture_to_file(
+                        x.create, check_preexisting=check_preexisting
+                    ) as (_status, _stdout, stderr):
+                        original_stderr = stderr
+                    testable_stderr = original_stderr.lower()
+                    if "error" in testable_stderr:
+                        print(original_stderr, file=stderr)
+                    self.assertNotIn("error", testable_stderr)
+
+
+########################################
+
+
+@unittest.skipUnless(_should_run_conda_tests(), SKIP_CONDA_MESSAGE)
+class Test_220_CondaRemove(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+
+    @parameterized.parameterized.expand(
+        [
+            ("plain_dry_run", reqs.REQ_SCHEME_PLAIN, True, None, None),
+            ("plain", reqs.REQ_SCHEME_PLAIN, False, None, None),
+            (
+                "plain_dry_run_env_name",
+                reqs.REQ_SCHEME_PLAIN,
+                True,
+                None,
+                "dummy-env",
+            ),
+            ("plain_env_name", reqs.REQ_SCHEME_PLAIN, False, None, "dummy-env"),
+            ("dev_dry_run", reqs.REQ_SCHEME_DEV, True, None, None),
+            ("dev", reqs.REQ_SCHEME_DEV, False, None, None),
+            ("frozen_dry_run", reqs.REQ_SCHEME_FROZEN, True, None, None),
+            ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None),
+            ("source_dry_run", reqs.REQ_SCHEME_SOURCE, True, None, None),
+            ("source", reqs.REQ_SCHEME_SOURCE, False, None, None),
+            ("package_dry_run", reqs.REQ_SCHEME_PACKAGE, True, "argcomplete", None),
+            ("package", reqs.REQ_SCHEME_PACKAGE, False, "argcomplete", None),
+        ]
+    )
+    @unittest.skipUnless(_should_run_long_tests(), SKIP_LONG_RUNNING_MESSAGE)
+    def test_PV_ENV_CDA_210_remove(self, name, req_scheme, dry_run, basename, env_name):
+        env_prefix = ".conda-env"
+        dirs = [env_prefix]
+        filespecs = {
+            "requirements.txt": "argcomplete",
+            "requirements_frozen.txt": "argcomplete == 1.12.3",
+            os.path.join("dev", "requirements_build.txt"): "",
+            os.path.join("dev", "requirements_dev.txt"): "",
+            os.path.join("dev", "requirements_test.txt"): "parameterized",
+        }
+        with ctx.project("dummy_package", dirs=dirs, filespecs=filespecs):
+            x = env.CondaEnvironment(
+                req_scheme,
+                basename=basename,
+                env_name=env_name,
+                env_prefix=env_prefix,
+                dry_run=dry_run,
+                force=True,
+            )
+            y = env.CondaEnvironment(
+                req_scheme,
+                basename=basename,
+                env_name=env_name,
+                env_prefix=env_prefix,
+                dry_run=False,
+                force=True,
+            )
+            if not _should_suppress_output():
+                x.remove()  # remove non-existent
+                y.create()
+                x.remove()  # remove existing
+            else:
+                original_stderrs = []
+                with ctx.capture_to_file(x.remove) as (_status, _stdout, stderr):
+                    original_stderrs.append(stderr)
+                with ctx.capture_to_file(x.create) as (_status, _stdout, stderr):
+                    original_stderrs.append(stderr)
+                with ctx.capture_to_file(x.remove) as (_status, _stdout, stderr):
+                    original_stderrs.append(stderr)
+                testable_stderrs = [x.lower() for x in original_stderrs]
+                for (i, text) in enumerate(testable_stderrs):
+                    if "error" in text:
+                        print(original_stderrs[i], file=stderr)
+                    self.assertNotIn("error", text)
