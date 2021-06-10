@@ -25,6 +25,32 @@ def capture(a_callable, *args, **kwargs):
         sys.stderr = orig_stderr
 
 
+@contextlib.contextmanager
+def capture_to_file(a_callable, *args, **kwargs):
+    """Capture status, stdout, and stderr from a function or method call"""
+    orig_stdout = sys.stdout
+    orig_stderr = sys.stderr
+    try:
+        sys.stdout = tempfile.SpooledTemporaryFile(
+            mode="w+", prefix=a_callable.__name__, suffix=".out"
+        )
+        sys.stderr = tempfile.SpooledTemporaryFile(
+            mode="w+", prefix=a_callable.__name__, suffix=".err"
+        )
+
+        status = a_callable(*args, **kwargs)
+
+        sys.stdout.seek(0)
+        sys.stderr.seek(0)
+
+        yield (status, sys.stdout.read(), sys.stderr.read())
+    finally:
+        sys.stdout.close()
+        sys.stderr.close()
+        sys.stdout = orig_stdout
+        sys.stderr = orig_stderr
+
+
 SETUP_TEMPLATE = """
 import os.path
 from setuptools import find_packages, setup
