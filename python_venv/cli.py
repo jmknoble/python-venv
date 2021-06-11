@@ -294,6 +294,7 @@ def _command_action_remove(_prog, args):
     kwargs = {
         "dry_run": args.dry_run,
         "force": args.force,
+        "python": PYTHON,
         "basename": args.basename,
         "env_name": args.env_name,
     }
