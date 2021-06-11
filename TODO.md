@@ -9,7 +9,7 @@ source and suffers from that.
 - DONE ~Split virtual environment "smarts" into separate module(s), preferably using
   an abstract base class and derived concrete classes to implement.~
 - DONE ~Possibly split requirements handling into its own module.~
-- Clean up the CLI argument parsing.
+- DONE (more or less) ~Clean up the CLI argument parsing.~
 - DONE (but no prompting) ~Add `replace` command (`create --force`, with prompting).~
 - DONE ~Write unit tests.~
 

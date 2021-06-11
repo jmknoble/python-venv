@@ -179,23 +179,24 @@ class BaseVirtualEnvironment(object):
         if not self.ignore_preflight_checks:
             reqs.check_requirements_for_scheme(self.req_scheme)
 
-    def create(self, check_preexisting=True):
+    def create(self, check_preexisting=True, run_preflight_checks=True, emit_done=True):
         """Create the environment (abstract method)."""
         raise NotImplementedError(
             "This is an abstract base class, please inherit from it."
         )
 
-    def remove(self):
+    def remove(self, emit_done=True):
         """Remove the environment (abstract method)."""
         raise NotImplementedError(
             "This is an abstract base class, please inherit from it."
         )
 
     def replace(self):
-        """Replace the environment (abstract method)."""
-        raise NotImplementedError(
-            "This is an abstract base class, please inherit from it."
-        )
+        """Replace this environment (remove, then create it)."""
+        self.progress(f"Replacing {self.env_description}")
+        self.preflight_checks_for_create()
+        self.remove(emit_done=False)
+        self.create(check_preexisting=False, run_preflight_checks=False)
 
 
 ####################
@@ -228,10 +229,12 @@ class VenvEnvironment(BaseVirtualEnvironment):
             )
         return False
 
-    def create(self, check_preexisting=True):
+    def create(self, check_preexisting=True, run_preflight_checks=True, emit_done=True):
         """Create this environment."""
         self.progress(f"Creating {self.env_description}")
-        self.preflight_checks_for_create()
+
+        if run_preflight_checks:
+            self.preflight_checks_for_create()
 
         if self.env_exists():
             if not self.dry_run or (self.dry_run and check_preexisting):
@@ -289,7 +292,7 @@ class VenvEnvironment(BaseVirtualEnvironment):
         if not self.dry_run:
             self.progress(f"To use your virtual environment: 'source {env_activate}'.")
 
-    def remove(self):
+    def remove(self, emit_done=True):
         """Remove this environment."""
         self.progress(f"Removing {self.env_description}")
 
@@ -391,10 +394,12 @@ class CondaEnvironment(BaseVirtualEnvironment):
             )
         return False
 
-    def create(self, check_preexisting=True):
+    def create(self, check_preexisting=True, run_preflight_checks=True, emit_done=True):
         """Create this environment."""
         self.progress(f"Creating {self.env_description}")
-        self.preflight_checks_for_create()
+
+        if run_preflight_checks:
+            self.preflight_checks_for_create()
 
         if self.env_exists(want=False) and (
             not self.dry_run or (self.dry_run and check_preexisting)
@@ -431,7 +436,6 @@ class CondaEnvironment(BaseVirtualEnvironment):
                 stdout=sys.stdout,
                 stderr=sys.stderr,
             )
-
         if reqs.requirements_need_pip(self.requirements):
             runcommand.run_command(
                 [env_python, "-m", "pip", "install"]
@@ -442,14 +446,15 @@ class CondaEnvironment(BaseVirtualEnvironment):
                 stdout=sys.stdout,
                 stderr=sys.stderr,
             )
+        if emit_done:
+            self.progress("Done.")
+            if not self.dry_run:
+                self.progress(
+                    "To use your virtual environment: "
+                    f"'source activate {self.env_name}'."
+                )
 
-        self.progress("Done.")
-        if not self.dry_run:
-            self.progress(
-                f"To use your virtual environment: 'source activate {self.env_name}'."
-            )
-
-    def remove(self):
+    def remove(self, emit_done=True):
         """Remove this environment."""
         self.progress(f"Removing {self.env_description}")
 
@@ -472,4 +477,5 @@ class CondaEnvironment(BaseVirtualEnvironment):
             stdout=sys.stdout,
             stderr=sys.stderr,
         )
-        self.progress("Done.")
+        if emit_done:
+            self.progress("Done.")

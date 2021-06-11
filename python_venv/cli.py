@@ -266,7 +266,7 @@ def _add_version_arguments(prog, argparser, **_kwargs):
     return argparser
 
 
-def _command_action_create(_prog, args, check_preexisting=True):
+def _get_virtual_env(args):
     kwargs = {
         "dry_run": args.dry_run,
         "force": args.force,
@@ -279,8 +279,11 @@ def _command_action_create(_prog, args, check_preexisting=True):
     elif args.env_type == ENV_TYPE_CONDA:
         virtual_env = env.CondaEnvironment(args.req_scheme, **kwargs)
 
-    virtual_env.create(check_preexisting=check_preexisting)
+    return virtual_env
 
+
+def _command_action_create(_prog, args):
+    _get_virtual_env(args).create()
     return STATUS_SUCCESS
 
 
@@ -291,27 +294,12 @@ def _command_action_remove(_prog, args):
             "Please supply either the '-e/--env-name' or '-r/--requirements' "
             "option so we know the name of the environment to remove."
         )
-    kwargs = {
-        "dry_run": args.dry_run,
-        "force": args.force,
-        "python": PYTHON,
-        "basename": args.basename,
-        "env_name": args.env_name,
-    }
-    if args.env_type == ENV_TYPE_VENV:
-        virtual_env = env.VenvEnvironment(args.req_scheme, **kwargs)
-    elif args.env_type == ENV_TYPE_CONDA:
-        virtual_env = env.CondaEnvironment(args.req_scheme, **kwargs)
-
-    virtual_env.remove()
-
+    _get_virtual_env(args).remove()
     return STATUS_SUCCESS
 
 
-def _command_action_replace(prog, args):
-    reqs.check_requirements_for_scheme(args.req_scheme)
-    _command_action_remove(prog, args)
-    _command_action_create(prog, args, check_preexisting=False)
+def _command_action_replace(_prog, args):
+    _get_virtual_env(args).replace()
     return STATUS_SUCCESS
 
 

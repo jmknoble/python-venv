@@ -22,12 +22,13 @@ def _generate_combinations(
     basenames = (None, "dummy-basename")
     env_names = (None, "dummy-env")
     forces = (False, True)
+    dry_runs = (False, True)
     actions = {
         "create": "create",
         "new": "create",
         "remove": "remove",
         "rm": "remove",
-        "replace": "create",
+        "replace": "replace",
     }
     opts = {
         "short": {
@@ -35,6 +36,7 @@ def _generate_combinations(
             "requirements": "-r",
             "basename": "-b",
             "env_name": "-e",
+            "dry_run": "-n",
             "force": "--force",
         },
         "long": {
@@ -42,6 +44,7 @@ def _generate_combinations(
             "requirements": "--requirements",
             "basename": "--basename",
             "env_name": "--env-name",
+            "dry_run": "--dry-run",
             "force": "--force",
         },
     }
@@ -78,10 +81,26 @@ def _generate_combinations(
             raise ValueError(f"one or more {name} is invalid: {things}")
 
     variations = itertools.product(
-        commands, env_types, requirements, basenames, env_names, forces, opt_types
+        commands,
+        env_types,
+        requirements,
+        basenames,
+        env_names,
+        forces,
+        dry_runs,
+        opt_types,
     )
 
-    for (command, env_type, req, basename, env_name, force, opt_type) in variations:
+    for (
+        command,
+        env_type,
+        req,
+        basename,
+        env_name,
+        force,
+        dry_run,
+        opt_type,
+    ) in variations:
         name_parts = [command, env_type, req]
 
         these_opts = opts.get(opt_type, opts.get(opt_type.replace("abbrev_", "")))
@@ -109,15 +128,16 @@ def _generate_combinations(
         if force:
             name_parts.append("force")
             args.append(these_opts["force"])
+        if dry_run:
+            name_parts.append("dry_run")
+            args.append(these_opts["dry_run"])
 
         add_kwargs = {
             "basename": basename,
             "env_name": env_name,
+            "dry_run": dry_run,
             "force": force,
         }
-        action_kwargs = {}
-        if action == "create":
-            action_kwargs["check_preexisting"] = bool(command in ["create", "new"])
 
         name_parts.append(opt_type)
         name = "_".join(name_parts)
@@ -129,7 +149,6 @@ def _generate_combinations(
             args,
             req,
             add_kwargs,
-            action_kwargs,
         )
 
 
@@ -205,82 +224,82 @@ class TestCli(unittest.TestCase):
         _generate_combinations(commands=["create"], env_types=["venv"])
     )
     def test_PV_CLI_100_venv(
-        self, name, command, action, options, req_scheme, add_kwargs, action_kwargs
+        self, name, command, action, options, req_scheme, add_kwargs
     ):
-        for dry_run in ["-n", "--dry-run"]:
-            with patch.object(
-                env.VenvEnvironment, "__init__", return_value=None
-            ) as init:
-                with patch.object(env.VenvEnvironment, action) as action_method:
-                    cli.main("python-venv", command, dry_run, *options)
-            kwargs = {
-                "dry_run": True,
-                "force": False,
-                "python": "python3",
-            }
-            kwargs.update(add_kwargs)
-            init.assert_called_once_with(req_scheme, **kwargs)
-            action_method.assert_called_once_with(**action_kwargs)
+        with patch.object(env.VenvEnvironment, "__init__", return_value=None) as init:
+            with patch.object(env.VenvEnvironment, action) as action_method:
+                cli.main("python-venv", command, *options)
+        kwargs = {"python": "python3"}
+        kwargs.update(add_kwargs)
+        init.assert_called_once_with(req_scheme, **kwargs)
+        action_method.assert_called_once_with()
 
     @parameterized.parameterized.expand(
         _generate_combinations(commands=["remove"], env_types=["venv"])
     )
     def test_PV_CLI_110_venv(
-        self, name, command, action, options, req_scheme, add_kwargs, action_kwargs
+        self, name, command, action, options, req_scheme, add_kwargs
     ):
-        for dry_run in ["-n", "--dry-run"]:
-            with patch.object(
-                env.VenvEnvironment, "__init__", return_value=None
-            ) as init:
-                with patch.object(env.VenvEnvironment, action) as action_method:
-                    cli.main("python-venv", command, dry_run, *options)
-            kwargs = {
-                "dry_run": True,
-                "force": False,
-                "python": "python3",
-            }
-            kwargs.update(add_kwargs)
-            init.assert_called_once_with(req_scheme, **kwargs)
-            action_method.assert_called_once_with(**action_kwargs)
+        with patch.object(env.VenvEnvironment, "__init__", return_value=None) as init:
+            with patch.object(env.VenvEnvironment, action) as action_method:
+                cli.main("python-venv", command, *options)
+        kwargs = {"python": "python3"}
+        kwargs.update(add_kwargs)
+        init.assert_called_once_with(req_scheme, **kwargs)
+        action_method.assert_called_once_with()
+
+    @parameterized.parameterized.expand(
+        _generate_combinations(commands=["replace"], env_types=["venv"])
+    )
+    def test_PV_CLI_120_venv(
+        self, name, command, action, options, req_scheme, add_kwargs
+    ):
+        with patch.object(env.VenvEnvironment, "__init__", return_value=None) as init:
+            with patch.object(env.VenvEnvironment, action) as action_method:
+                cli.main("python-venv", command, *options)
+        kwargs = {"python": "python3"}
+        kwargs.update(add_kwargs)
+        init.assert_called_once_with(req_scheme, **kwargs)
+        action_method.assert_called_once_with()
 
     @parameterized.parameterized.expand(
         _generate_combinations(commands=["create"], env_types=["conda"])
     )
     def test_PV_CLI_200_conda(
-        self, name, command, action, options, req_scheme, add_kwargs, action_kwargs
+        self, name, command, action, options, req_scheme, add_kwargs
     ):
-        for dry_run in ["-n", "--dry-run"]:
-            with patch.object(
-                env.CondaEnvironment, "__init__", return_value=None
-            ) as init:
-                with patch.object(env.CondaEnvironment, action) as action_method:
-                    cli.main("python-venv", command, dry_run, *options)
-            kwargs = {
-                "dry_run": True,
-                "force": False,
-                "python": "python3",
-            }
-            kwargs.update(add_kwargs)
-            init.assert_called_once_with(req_scheme, **kwargs)
-            action_method.assert_called_once_with(**action_kwargs)
+        with patch.object(env.CondaEnvironment, "__init__", return_value=None) as init:
+            with patch.object(env.CondaEnvironment, action) as action_method:
+                cli.main("python-venv", command, *options)
+        kwargs = {"python": "python3"}
+        kwargs.update(add_kwargs)
+        init.assert_called_once_with(req_scheme, **kwargs)
+        action_method.assert_called_once_with()
 
     @parameterized.parameterized.expand(
         _generate_combinations(commands=["remove"], env_types=["conda"])
     )
     def test_PV_CLI_210_conda(
-        self, name, command, action, options, req_scheme, add_kwargs, action_kwargs
+        self, name, command, action, options, req_scheme, add_kwargs
     ):
-        for dry_run in ["-n", "--dry-run"]:
-            with patch.object(
-                env.CondaEnvironment, "__init__", return_value=None
-            ) as init:
-                with patch.object(env.CondaEnvironment, action) as action_method:
-                    cli.main("python-venv", command, dry_run, *options)
-            kwargs = {
-                "dry_run": True,
-                "force": False,
-                "python": "python3",
-            }
-            kwargs.update(add_kwargs)
-            init.assert_called_once_with(req_scheme, **kwargs)
-            action_method.assert_called_once_with(**action_kwargs)
+        with patch.object(env.CondaEnvironment, "__init__", return_value=None) as init:
+            with patch.object(env.CondaEnvironment, action) as action_method:
+                cli.main("python-venv", command, *options)
+        kwargs = {"python": "python3"}
+        kwargs.update(add_kwargs)
+        init.assert_called_once_with(req_scheme, **kwargs)
+        action_method.assert_called_once_with()
+
+    @parameterized.parameterized.expand(
+        _generate_combinations(commands=["replace"], env_types=["conda"])
+    )
+    def test_PV_CLI_220_conda(
+        self, name, command, action, options, req_scheme, add_kwargs
+    ):
+        with patch.object(env.CondaEnvironment, "__init__", return_value=None) as init:
+            with patch.object(env.CondaEnvironment, action) as action_method:
+                cli.main("python-venv", command, *options)
+        kwargs = {"python": "python3"}
+        kwargs.update(add_kwargs)
+        init.assert_called_once_with(req_scheme, **kwargs)
+        action_method.assert_called_once_with()
