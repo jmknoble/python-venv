@@ -13,7 +13,7 @@ from . import argparsing, completion, env, exceptions, get_version, reqs
 
 STATUS_SUCCESS = 0
 STATUS_FAILURE = 1
-STATUS_HELP = 42
+STATUS_HELP = 2
 
 PYTHON = "python3"
 
@@ -55,8 +55,6 @@ ENV_TYPES = [
     ENV_TYPE_VENV,
     ENV_TYPE_CONDA,
 ]
-
-DEFAULT_ENV_TYPE = ENV_TYPE_VENV
 
 DESCRIPTION_MAIN = f"""
 Create or remove a Python virtual environment for the Python project in the
@@ -185,15 +183,14 @@ def _add_venv_arguments(argparser, req_scheme_required=False, **_kwargs):
     )
 
     venv_group = argparser.add_argument_group(title="environment options")
-    venv_mutex_group = venv_group.add_mutually_exclusive_group()
+    venv_mutex_group = venv_group.add_mutually_exclusive_group(required=True)
     venv_mutex_group.add_argument(
         "-t",
         "--type",
         action="store",
         dest="env_type",
         choices=ENV_TYPES,
-        default=DEFAULT_ENV_TYPE,
-        help=f"The type of environment to create (default: {DEFAULT_ENV_TYPE})",
+        help="The type of environment to create",
     )
     venv_mutex_group.add_argument(
         "-v",
@@ -364,7 +361,7 @@ def main(*argv):
     args = argparser.parse_args(argv)
     if args.command is None:
         argparser.print_usage()
-        return STATUS_HELP
+        sys.exit(STATUS_HELP)  # Same behavior as argparse usage messages
 
     try:
         try:
