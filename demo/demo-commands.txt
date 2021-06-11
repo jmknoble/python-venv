@@ -1,0 +1,70 @@
+da
+./python-venv rm -c -s
+./python-venv rm -c -d
+./python-venv rm -v
+
+>dev/requirements_dev.txt
+
+asciinema rec --idle-time-limit 2 --overwrite python-venv-demo.cast
+
+#################### {{{
+
+unset PYTHONPATH
+unset __PYVENV_LAUNCHER__
+clear
+
+./python-venv --version
+./python-venv --help
+./python-venv create --help
+
+clear
+
+./python-venv create -t venv -r plain --dry-run
+cat requirements.txt
+./python-venv create -t venv -r plain
+
+source .venv/bin/activate
+which python
+python -m pip list
+deactivate
+
+clear
+
+./python-venv replace -t venv -r source --dry-run  # <-- --n
+./python-venv replace -t venv -r source
+source .venv/bin/activate
+which python-venv
+deactivate
+ln -snfv $(pwd)/.venv/bin/python-venv ~/bin/
+python-venv --version
+
+clear
+
+python-venv completion
+eval $(python-venv completion --bash)
+
+clear
+
+which conda
+python-venv create -t conda -r dev -n
+for i in requirements.txt dev/requirements*.txt; do echo "-------- $i --------"; cat "$i"; done
+python-venv create -t conda -r dev
+
+source activate python-venv-dev
+which python-venv
+which python
+python -m pip list
+conda deactivate
+
+echo 'Sphinx' >> dev/requirements_dev.txt
+python-venv replace -t conda -r dev --force
+source activate python-venv-dev
+python -m pip list |fgrep -i sphinx
+conda deactivate
+
+python-venv remove -t conda -r dev
+
+clear
+exit
+
+#################### }}}
