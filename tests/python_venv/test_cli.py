@@ -1,6 +1,7 @@
 """Provide unit tests for `~python_venv.cli`:py:mod:."""
 
 import itertools
+import os.path
 import unittest
 from unittest.mock import patch
 
@@ -175,13 +176,28 @@ class TestCli(unittest.TestCase):
         with self.assertRaises(SystemExit) as raised:
             with ctx.capture(cli.main, "python-venv", option):
                 pass
-            status = raised.exception.args[0]
-            expected_status = 0
-            self.assertEqual(status, expected_status)
+        status = raised.exception.args[0]
+        expected_status = 0
+        self.assertEqual(status, expected_status)
 
-    def test_PV_CLI_001_usage(self):
-        with ctx.capture(cli.main, "python-venv") as (status, _stdout, _stderr):
-            self.assertEqual(status, 42)
+    @parameterized.parameterized.expand(
+        [
+            ("main", []),
+            ("create", ["create"]),
+            ("new", ["new"]),
+            ("remove", ["remove"]),
+            ("rm", ["rm"]),
+            ("replace", ["replace"]),
+            ("invalid", ["yuck"]),
+        ]
+    )
+    def test_PV_CLI_001_usage(self, name, args):
+        with self.assertRaises(SystemExit) as raised:
+            with ctx.capture(cli.main, "python-venv", *args):
+                pass
+        status = raised.exception.args[0]
+        expected_status = 2
+        self.assertEqual(status, expected_status)
 
     @parameterized.parameterized.expand(
         [
@@ -203,9 +219,9 @@ class TestCli(unittest.TestCase):
         with self.assertRaises(SystemExit) as raised:
             with ctx.capture(cli.main, "python-venv", subcommand, option):
                 pass
-            status = raised.exception.args[0]
-            expected_status = 0
-            self.assertEqual(status, expected_status)
+        status = raised.exception.args[0]
+        expected_status = 0
+        self.assertEqual(status, expected_status)
 
     @parameterized.parameterized.expand(
         [
@@ -219,6 +235,8 @@ class TestCli(unittest.TestCase):
         args.extend(options)
         with ctx.capture(*args) as (status, _stdout, _stderr):
             self.assertEqual(status, 0)
+
+    ####################
 
     @parameterized.parameterized.expand(
         _generate_combinations(commands=["create"], env_types=["venv"])
@@ -262,6 +280,14 @@ class TestCli(unittest.TestCase):
         init.assert_called_once_with(req_scheme, **kwargs)
         action_method.assert_called_once_with()
 
+    def test_PV_CLI_130_venv_remove_minimal(self):
+        with ctx.capture(
+            cli.main, "python-venv", "remove", "-t", "venv", "--dry-run"
+        ) as (status, _stdout, _stderr):
+            self.assertEqual(status, 0)
+
+    ####################
+
     @parameterized.parameterized.expand(
         _generate_combinations(commands=["create"], env_types=["conda"])
     )
@@ -303,3 +329,56 @@ class TestCli(unittest.TestCase):
         kwargs.update(add_kwargs)
         init.assert_called_once_with(req_scheme, **kwargs)
         action_method.assert_called_once_with()
+
+    def test_PV_CLI_230_conda_remove_minimal(self):
+        with ctx.capture(
+            cli.main, "python-venv", "remove", "-t", "conda", "--dry-run"
+        ) as (status, _stdout, stderr):
+            self.assertEqual(status, 1)
+            self.assertIn(
+                (
+                    "error: Please supply either the '-e/--env-name' "
+                    "or '-r/--requirements' option"
+                ),
+                stderr,
+            )
+
+    ####################
+
+    @parameterized.parameterized.expand(
+        [
+            ("venv_plain", "venv", "plain", {}),
+            ("venv_dev", "venv", "dev", {}),
+            ("venv_frozen", "venv", "frozen", {}),
+            ("conda_plain", "conda", "plain", {}),
+            ("conda_dev", "conda", "dev", {}),
+            ("conda_frozen", "conda", "frozen", {}),
+        ]
+    )
+    def test_PV_CLI_300_create_missing_req(self, name, env_type, req_scheme, filespecs):
+        req_files = {
+            "plain": ["requirements.txt"],
+            "dev": [
+                "requirements.txt",
+                os.path.join("dev", "requirements_build.txt"),
+                os.path.join("dev", "requirements_dev.txt"),
+                os.path.join("dev", "requirements_test.txt"),
+            ],
+            "frozen": ["requirements_frozen.txt"],
+        }
+        reqs = req_files[req_scheme]
+        noun = "file" if len(reqs) == 1 else "files"
+        reqs = ", ".join(reqs)
+        with ctx.project("dummy_package", filespecs=filespecs):
+            with ctx.capture(
+                cli.main,
+                "python-venv",
+                "create",
+                "--dry-run",
+                "-t",
+                env_type,
+                "-r",
+                req_scheme,
+            ) as (status, _stdout, stderr):
+                self.assertEqual(status, 1)
+                self.assertIn(f"error: Missing requirements {noun}: {reqs}\n", stderr)
