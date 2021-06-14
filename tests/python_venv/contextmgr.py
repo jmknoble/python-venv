@@ -91,8 +91,8 @@ def _ensure_relative_path(path):
         raise ValueError(
             f"path must be relative and may not refer to parent dir: '{path}'"
         )
-    if not path.startswith(os.path.join(".", "")):
-        path = os.path.join(".", path)
+    if not path.startswith(os.path.join(os.curdir, "")):
+        path = os.path.join(os.curdir, path)
     return path
 
 
