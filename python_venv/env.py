@@ -318,7 +318,21 @@ class VenvEnvironment(BaseVirtualEnvironment):
 
 
 class CondaEnvironment(BaseVirtualEnvironment):
-    """Model a ``conda`` virutal environment."""
+    """
+    Model a ``conda`` virutal environment.
+
+    Args:
+        python_version
+            A string containing the version of the Python interpreter to place
+            into the resulting environment (default: ``"3"``).
+
+    See Also:
+        base/parent class
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.python_version = kwargs.pop("python_version", "3")
+        super(CondaEnvironment, self).__init__(*args, **kwargs)
 
     @property
     def env_name(self):
@@ -414,7 +428,7 @@ class CondaEnvironment(BaseVirtualEnvironment):
         else:
             conda_command.extend(["-n", self.env_name])
         runcommand.run_command(
-            conda_command + ["python=3"],
+            conda_command + [f"python={self.python_version}"],
             show_trace=True,
             dry_run=self.dry_run,
             env=self.os_environ,

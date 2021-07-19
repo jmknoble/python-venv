@@ -933,6 +933,12 @@ class TestEnv_200_CondaEnvironment(unittest.TestCase):
                 "dummy_message_prefix",
             ),
             ("python", {"python": "dummy_python"}, "python", "dummy_python"),
+            (
+                "python_version",
+                {"python_version": "dummy_python_version"},
+                "python_version",
+                "dummy_python_version",
+            ),
             ("basename", {"basename": "dummy_basename"}, "_basename", "dummy_basename"),
             ("env_name", {"env_name": "dummy_env_name"}, "_env_name", "dummy_env_name"),
             (
@@ -1076,18 +1082,24 @@ class TestEnv_200_CondaEnvironment(unittest.TestCase):
 
     @parameterized.parameterized.expand(
         [
-            ("dry_run_text", "[DRY-RUN]"),
-            ("create_msg", "Creating conda environment dummy-package"),
-            ("create_venv", "+ conda create"),
-            ("install_msg", "Installing dummy_req_scheme requirements"),
+            ("dry_run_text", {}, "[DRY-RUN]"),
+            ("create_msg", {}, "Creating conda environment dummy-package"),
+            ("create_venv", {}, "+ conda create"),
+            (
+                "create_with_python_version",
+                {"python_version": "3.8"},
+                "+ conda create --quiet -n dummy-package python=3.8",
+            ),
+            ("install_msg", {}, "Installing dummy_req_scheme requirements"),
             (
                 "pip_install",
+                {},
                 "+ CONDA_ENV_DIR/bin/python3 -m pip install -r dummy_requirements.txt",
             ),
-            ("success", "==> Done."),
+            ("success", {}, "==> Done."),
         ]
     )
-    def test_PV_ENV_CDA_100_create_dry_run(self, name, expected_text):
+    def test_PV_ENV_CDA_100_create_dry_run(self, name, kwargs, expected_text):
         dummy_requirements = {reqs.FROM_FILES: ["dummy_requirements.txt"]}
         reqs.REQUIREMENTS = {"dummy_req_scheme": dummy_requirements}
         x = env.CondaEnvironment(
@@ -1095,6 +1107,7 @@ class TestEnv_200_CondaEnvironment(unittest.TestCase):
             dry_run=True,
             basename="dummy-package",
             ignore_preflight_checks=True,
+            **kwargs,
         )
         with ctx.capture(x.create, check_preexisting=False) as (
             status,
@@ -1125,7 +1138,7 @@ class TestEnv_200_CondaEnvironment(unittest.TestCase):
             ("success", "==> Done."),
         ]
     )
-    def test_PV_ENV_VNV_300_replace_dry_run(self, name, expected_text):
+    def test_PV_ENV_CDA_300_replace_dry_run(self, name, expected_text):
         dummy_requirements = {reqs.FROM_FILES: ["dummy_requirements.txt"]}
         reqs.REQUIREMENTS = {"dummy_req_scheme": dummy_requirements}
         x = env.CondaEnvironment(
