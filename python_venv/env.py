@@ -24,7 +24,7 @@ class BaseVirtualEnvironment(object):
 
     :Args:
         req_scheme
-            The requirements scheme from `~python_env.reqs`:py:mod: to use for
+            The requirements scheme from `~python_venv.reqs`:py:mod: to use for
             this environment.
 
         basename
