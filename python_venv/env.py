@@ -331,7 +331,9 @@ class CondaEnvironment(BaseVirtualEnvironment):
     """
 
     def __init__(self, *args, **kwargs):
-        self.python_version = kwargs.pop("python_version", "3")
+        self.python_version = kwargs.pop("python_version", None)
+        if self.python_version is None:
+            self.python_version = "3"
         super(CondaEnvironment, self).__init__(*args, **kwargs)
 
     @property

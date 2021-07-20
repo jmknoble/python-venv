@@ -1,6 +1,7 @@
 """Provide a command-line interface for `~python_venv`:py:mod:."""
 
 import argparse
+import re
 import sys
 
 try:
@@ -16,6 +17,8 @@ STATUS_FAILURE = 1
 STATUS_HELP = 2
 
 PYTHON = "python3"
+
+PYTHON_VERSION_REGEX = r"^[0-9]+(\.[0-9]+){0,2}"  # Must start with X, X.Y, or X.Y.Z
 
 COMMAND_CREATE = "create"
 COMMAND_REMOVE = "remove"
@@ -45,6 +48,11 @@ COMMANDS = {
 VENV_COMMANDS = [
     COMMAND_CREATE,
     COMMAND_REMOVE,
+    COMMAND_REPLACE,
+]
+
+VENV_CREATE_COMMANDS = [
+    COMMAND_CREATE,
     COMMAND_REPLACE,
 ]
 
@@ -233,6 +241,17 @@ def _add_force_arguments(argparser, **_kwargs):
     return argparser
 
 
+def _add_python_version_arguments(argparser, **_kwargs):
+    argparser.add_argument(
+        "--python-version",
+        metavar="X.Y",
+        action="store",
+        default=None,
+        help="Python version to use when creating conda environment",
+    )
+    return argparser
+
+
 def _add_completion_arguments(argparser, **_kwargs):
     argparser.add_argument(
         "--bash",
@@ -263,6 +282,20 @@ def _add_version_arguments(prog, argparser, **_kwargs):
     return argparser
 
 
+def _check_create_args(args):
+    if args.python_version is not None:
+        if args.env_type != ENV_TYPE_CONDA:
+            raise RuntimeError(
+                "'--python-version' only makes sense with '--type conda'"
+            )
+        if re.match(PYTHON_VERSION_REGEX, args.python_version) is None:
+            raise RuntimeError(
+                f"--python-version: {args.python_version}: must start with a "
+                "major, major.minor, or major.minor.micro version "
+                "(example: --python-version 3.9)"
+            )
+
+
 def _get_virtual_env(args):
     kwargs = {
         "dry_run": args.dry_run,
@@ -271,6 +304,12 @@ def _get_virtual_env(args):
         "basename": args.basename,
         "env_name": args.env_name,
     }
+    try:
+        if args.python_version is not None:
+            kwargs["python_version"] = args.python_version
+    except AttributeError:  # args.python_version may not exist
+        pass
+
     if args.env_type == ENV_TYPE_VENV:
         virtual_env = env.VenvEnvironment(args.req_scheme, **kwargs)
     elif args.env_type == ENV_TYPE_CONDA:
@@ -280,6 +319,7 @@ def _get_virtual_env(args):
 
 
 def _command_action_create(_prog, args):
+    _check_create_args(args)
     _get_virtual_env(args).create()
     return STATUS_SUCCESS
 
@@ -296,6 +336,7 @@ def _command_action_remove(_prog, args):
 
 
 def _command_action_replace(_prog, args):
+    _check_create_args(args)
     _get_virtual_env(args).replace()
     return STATUS_SUCCESS
 
@@ -330,6 +371,10 @@ def _populate_command_actions(commands, prog):
             _add_venv_arguments,
             _add_force_arguments,
         ]
+    for command in VENV_CREATE_COMMANDS:
+        commands[command][add_arguments_funcs].append(
+            _add_python_version_arguments,
+        )
     commands[COMMAND_COMPLETION][add_arguments_funcs] = [_add_completion_arguments]
 
 

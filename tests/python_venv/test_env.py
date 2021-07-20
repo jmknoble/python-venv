@@ -939,6 +939,12 @@ class TestEnv_200_CondaEnvironment(unittest.TestCase):
                 "python_version",
                 "dummy_python_version",
             ),
+            (
+                "python_version_none",
+                {"python_version": None},
+                "python_version",
+                "3",
+            ),
             ("basename", {"basename": "dummy_basename"}, "_basename", "dummy_basename"),
             ("env_name", {"env_name": "dummy_env_name"}, "_env_name", "dummy_env_name"),
             (

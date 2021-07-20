@@ -1,5 +1,6 @@
 """Provide unit tests for `~python_venv.cli`:py:mod:."""
 
+import argparse
 import itertools
 import os.path
 import unittest
@@ -23,6 +24,7 @@ def _generate_combinations(
     basenames = (None, "dummy-basename")
     env_names = (None, "dummy-env")
     forces = (False, True)
+    python_versions = (None, "1.2.3")
     dry_runs = (False, True)
     actions = {
         "create": "create",
@@ -39,6 +41,7 @@ def _generate_combinations(
             "env_name": "-e",
             "dry_run": "-n",
             "force": "--force",
+            "python_version": "--python-version",
         },
         "long": {
             "env_type": "--type",
@@ -47,6 +50,7 @@ def _generate_combinations(
             "env_name": "--env-name",
             "dry_run": "--dry-run",
             "force": "--force",
+            "python_version": "--python-version",
         },
     }
     abbrevs = {
@@ -88,6 +92,7 @@ def _generate_combinations(
         basenames,
         env_names,
         forces,
+        python_versions,
         dry_runs,
         opt_types,
     )
@@ -99,12 +104,14 @@ def _generate_combinations(
         basename,
         env_name,
         force,
+        python_version,
         dry_run,
         opt_type,
     ) in variations:
         name_parts = [command, env_type, req]
 
-        these_opts = opts.get(opt_type, opts.get(opt_type.replace("abbrev_", "")))
+        fallback_opt_type = opt_type.replace("abbrev_", "")
+        these_opts = opts.get(opt_type, opts.get(fallback_opt_type)).copy()
         these_abbrevs = abbrevs.get(opt_type)
 
         args = []
@@ -123,12 +130,21 @@ def _generate_combinations(
         if basename:
             name_parts.append("basename")
             args.extend([these_opts["basename"], basename])
+
         if env_name:
             name_parts.append("env_name")
             args.extend([these_opts["env_name"], env_name])
+
         if force:
             name_parts.append("force")
             args.append(these_opts["force"])
+
+        if python_version and env_type == "conda" and action in {"create", "replace"}:
+            name_parts.append("pyver")
+            args.extend([these_opts["python_version"], python_version])
+        else:
+            python_version = None
+
         if dry_run:
             name_parts.append("dry_run")
             args.append(these_opts["dry_run"])
@@ -139,6 +155,8 @@ def _generate_combinations(
             "dry_run": dry_run,
             "force": force,
         }
+        if python_version:
+            add_kwargs["python_version"] = python_version
 
         name_parts.append(opt_type)
         name = "_".join(name_parts)
@@ -235,6 +253,29 @@ class TestCli(unittest.TestCase):
         args.extend(options)
         with ctx.capture(*args) as (status, _stdout, _stderr):
             self.assertEqual(status, 0)
+
+    @parameterized.parameterized.expand(
+        [
+            ("venv_invalid_raises", "venv", "invalid_python_version", True),
+            ("venv_valid_raises", "venv", "1.2.3", True),
+            ("conda_invalid_raises", "conda", "invalid_python_version", True),
+            ("conda_major_only", "conda", "1", False),
+            ("conda_major_minor", "conda", "1.2", False),
+            ("conda_major_minor_micro", "conda", "1.2.3", False),
+            ("conda_major_minor_micro_extra", "conda", "1.2.3.4", False),
+            ("conda_major_minor_micro_rc", "conda", "1.2.3rc4", False),
+            ("conda_major_minor_micro_dot_rc", "conda", "1.2.3.rc4", False),
+        ]
+    )
+    def test_PV_CLI_030_check_python_version(
+        self, name, env_type, python_version, should_raise
+    ):
+        args = argparse.Namespace(env_type=env_type, python_version=python_version)
+        if should_raise:
+            with self.assertRaises(RuntimeError):
+                cli._check_create_args(args)
+        else:
+            cli._check_create_args(args)
 
     ####################
 
