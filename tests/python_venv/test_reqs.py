@@ -4,7 +4,7 @@ import unittest
 
 import parameterized  # https://pypi.org/project/parameterized/
 
-from python_venv import exceptions, reqs
+from python_venv import const, exceptions, reqs
 
 ########################################
 # Tests
@@ -106,14 +106,14 @@ class TestRequirements(unittest.TestCase):
 
     @parameterized.parameterized.expand(
         [
-            ("from_files", {reqs.FROM_FILES: "dummy"}, True),
-            ("from_packages", {reqs.FROM_PACKAGES: "dummy"}, True),
+            ("from_files", {const.FROM_FILES: "dummy"}, True),
+            ("from_packages", {const.FROM_PACKAGES: "dummy"}, True),
             (
                 "from_both",
-                {reqs.FROM_FILES: "dummy", reqs.FROM_PACKAGES: "dummy"},
+                {const.FROM_FILES: "dummy", const.FROM_PACKAGES: "dummy"},
                 True,
             ),
-            ("nope", {reqs.FROM_COMMANDS: "dummy"}, False),
+            ("nope", {const.FROM_COMMANDS: "dummy"}, False),
             ("empty", {}, False),
         ]
     )
@@ -127,22 +127,22 @@ class TestRequirements(unittest.TestCase):
     @parameterized.parameterized.expand(
         [
             ("none", {}, {}, []),
-            ("simple", {reqs.FROM_COMMANDS: [["dummy"]]}, {}, [["dummy"]]),
+            ("simple", {const.FROM_COMMANDS: [["dummy"]]}, {}, [["dummy"]]),
             (
                 "multi",
-                {reqs.FROM_COMMANDS: [["dummy1"], ["dummy2"]]},
+                {const.FROM_COMMANDS: [["dummy1"], ["dummy2"]]},
                 {},
                 [["dummy1"], ["dummy2"]],
             ),
             (
                 "formatted1",
-                {reqs.FROM_COMMANDS: [["{dummy}"]]},
+                {const.FROM_COMMANDS: [["{dummy}"]]},
                 {"dummy": "dummyval"},
                 [["dummyval"]],
             ),
             (
                 "formatted2",
-                {reqs.FROM_COMMANDS: [["{dummy1}"], ["{dummy2}"], ["dummy3"]]},
+                {const.FROM_COMMANDS: [["{dummy1}"], ["{dummy2}"], ["dummy3"]]},
                 {"dummy1": "dummyval1", "dummy2": "dummyval2"},
                 [["dummyval1"], ["dummyval2"], ["dummy3"]],
             ),
@@ -163,21 +163,21 @@ class TestRequirements(unittest.TestCase):
             ("none", {}, None, []),
             (
                 "files_only",
-                {reqs.FROM_FILES: ["dummy1", "dummy2"]},
+                {const.FROM_FILES: ["dummy1", "dummy2"]},
                 "dummy-package",
                 ["-r", "dummy1", "-r", "dummy2"],
             ),
             (
                 "package_only",
-                {reqs.FROM_PACKAGES: ["{basename}"]},
+                {const.FROM_PACKAGES: ["{basename}"]},
                 "dummy-package",
                 ["dummy-package"],
             ),
             (
                 "both",
                 {
-                    reqs.FROM_PACKAGES: ["{basename}"],
-                    reqs.FROM_FILES: ["dummy1", "dummy2"],
+                    const.FROM_PACKAGES: ["{basename}"],
+                    const.FROM_FILES: ["dummy1", "dummy2"],
                 },
                 "dummy-package",
                 ["-r", "dummy1", "-r", "dummy2", "dummy-package"],
@@ -185,8 +185,8 @@ class TestRequirements(unittest.TestCase):
             (
                 "extra",
                 {
-                    reqs.FROM_COMMANDS: ["dummy-command"],
-                    reqs.FROM_PACKAGES: ["{basename}"],
+                    const.FROM_COMMANDS: ["dummy-command"],
+                    const.FROM_PACKAGES: ["{basename}"],
                 },
                 "dummy-package",
                 ["dummy-package"],
@@ -221,7 +221,7 @@ class TestRequirements(unittest.TestCase):
     def test_PV_RQ_102_check_requirements_for_scheme_nonexistent(self):
         reqs.REQUIREMENTS = {
             "weird": {
-                reqs.FROM_FILES: ["weird-nonexistent.flummox"],
+                const.FROM_FILES: ["weird-nonexistent.flummox"],
             },
         }
         with self.assertRaises(exceptions.MissingRequirementsError):

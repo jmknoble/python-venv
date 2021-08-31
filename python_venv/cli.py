@@ -54,11 +54,11 @@ current directory.  We expect a 'setup.py' to exist, along with requirements in
 '{reqs.REQUIREMENTS_PLAIN}', '{reqs.REQUIREMENTS_FROZEN}', '{reqs.REQUIREMENTS_DEV}',
 and '{reqs.REQUIREMENTS_TEST}'.
 
-Venv virtual environments are created in '{env.VENV_DIR}'.
+Venv virtual environments are created in '{const.VENV_DIR}'.
 
 Conda virtual environments are created using the name of the Python project
 (via '{const.PYTHON} setup.py --name'), with underscores ('_') replaced by hyphens ('-')
-and with '{env.DEV_SUFFIX}' appended for development environments.
+and with '{const.DEV_SUFFIX}' appended for development environments.
 """
 
 DESCRIPTION_CREATE = """

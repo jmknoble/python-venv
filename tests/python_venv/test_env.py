@@ -7,7 +7,7 @@ import unittest
 
 import parameterized  # https://pypi.org/project/parameterized/
 
-from python_venv import env
+from python_venv import const, env
 from python_venv import exceptions as exc
 from python_venv import reqs
 from tests.python_venv import contextmgr as ctx
@@ -63,10 +63,10 @@ class TestEnv_000_General(unittest.TestCase):
         pass
 
     def test_PV_ENV_000_symbols_exist(self):
-        _ = env.PYTHON
-        _ = env.CONDA
-        _ = env.VENV_DIR
-        _ = env.DEV_SUFFIX
+        _ = const.PYTHON
+        _ = const.CONDA
+        _ = const.VENV_DIR
+        _ = const.DEV_SUFFIX
 
 
 class TestEnv_010_BaseVirtualEnvironment(unittest.TestCase):
@@ -349,7 +349,7 @@ class TestEnv_100_VenvEnvironment(unittest.TestCase):
         ]
     )
     def test_PV_ENV_VNV_100_create_dry_run(self, name, expected_text):
-        dummy_requirements = {reqs.FROM_FILES: ["dummy_requirements.txt"]}
+        dummy_requirements = {const.FROM_FILES: ["dummy_requirements.txt"]}
         reqs.REQUIREMENTS = {"dummy_req_scheme": dummy_requirements}
         x = env.VenvEnvironment(
             "dummy_req_scheme",
@@ -387,7 +387,7 @@ class TestEnv_100_VenvEnvironment(unittest.TestCase):
         ]
     )
     def test_PV_ENV_VNV_300_replace_dry_run(self, name, expected_text):
-        dummy_requirements = {reqs.FROM_FILES: ["dummy_requirements.txt"]}
+        dummy_requirements = {const.FROM_FILES: ["dummy_requirements.txt"]}
         reqs.REQUIREMENTS = {"dummy_req_scheme": dummy_requirements}
         x = env.VenvEnvironment(
             "dummy_req_scheme",
@@ -1106,7 +1106,7 @@ class TestEnv_200_CondaEnvironment(unittest.TestCase):
         ]
     )
     def test_PV_ENV_CDA_100_create_dry_run(self, name, kwargs, expected_text):
-        dummy_requirements = {reqs.FROM_FILES: ["dummy_requirements.txt"]}
+        dummy_requirements = {const.FROM_FILES: ["dummy_requirements.txt"]}
         reqs.REQUIREMENTS = {"dummy_req_scheme": dummy_requirements}
         x = env.CondaEnvironment(
             "dummy_req_scheme",
@@ -1145,7 +1145,7 @@ class TestEnv_200_CondaEnvironment(unittest.TestCase):
         ]
     )
     def test_PV_ENV_CDA_300_replace_dry_run(self, name, expected_text):
-        dummy_requirements = {reqs.FROM_FILES: ["dummy_requirements.txt"]}
+        dummy_requirements = {const.FROM_FILES: ["dummy_requirements.txt"]}
         reqs.REQUIREMENTS = {"dummy_req_scheme": dummy_requirements}
         x = env.CondaEnvironment(
             "dummy_req_scheme",
