@@ -2,7 +2,7 @@
 
 import os.path
 
-from . import exceptions
+from . import const, exceptions
 
 REQUIREMENTS_VENV = ["pip", "setuptools", "wheel"]
 
@@ -32,16 +32,12 @@ ALL_REQ_SCHEMES = [
     REQ_SCHEME_SOURCE,
 ]
 
-FROM_FILES = "files"
-FROM_PACKAGES = "packages"
-FROM_COMMANDS = "commands"
-
 REQUIREMENTS = {
     REQ_SCHEME_PLAIN: {
-        FROM_FILES: [REQUIREMENTS_PLAIN],
+        const.FROM_FILES: [REQUIREMENTS_PLAIN],
     },
     REQ_SCHEME_DEV: {
-        FROM_FILES: [
+        const.FROM_FILES: [
             REQUIREMENTS_PLAIN,
             REQUIREMENTS_BUILD,
             REQUIREMENTS_DEV,
@@ -49,13 +45,13 @@ REQUIREMENTS = {
         ],
     },
     REQ_SCHEME_FROZEN: {
-        FROM_FILES: [REQUIREMENTS_FROZEN],
+        const.FROM_FILES: [REQUIREMENTS_FROZEN],
     },
     REQ_SCHEME_PACKAGE: {
-        FROM_PACKAGES: [REQUIREMENTS_PACKAGE],
+        const.FROM_PACKAGES: [REQUIREMENTS_PACKAGE],
     },
     REQ_SCHEME_SOURCE: {
-        FROM_COMMANDS: [REQUIREMENTS_SOURCE],
+        const.FROM_COMMANDS: [REQUIREMENTS_SOURCE],
     },
 }
 
@@ -79,7 +75,7 @@ def check_requirements_for_scheme(req_scheme):
     """Check the requirements sources for `req_scheme` for missing ones."""
     missing = []
     for requirements_file in requirements_sources_for_scheme(req_scheme).get(
-        FROM_FILES, []
+        const.FROM_FILES, []
     ):
         if not os.path.exists(requirements_file):
             missing.append(requirements_file)
@@ -97,13 +93,13 @@ def any_requirements_from(requirements, whence):
 
 def requirements_need_pip(requirements):
     """Tell whether `requirements` has a ``FROM_*`` key that needs ``pip``."""
-    return any_requirements_from(requirements, {FROM_FILES, FROM_PACKAGES})
+    return any_requirements_from(requirements, {const.FROM_FILES, const.FROM_PACKAGES})
 
 
 def command_requirements(requirements, **kwargs):
     """Get any non-``pip`` commands from `requirements`."""
     commands = []
-    for command in requirements.get(FROM_COMMANDS, []):
+    for command in requirements.get(const.FROM_COMMANDS, []):
         commands.append([x.format(**kwargs) for x in command])
     return commands
 
@@ -111,9 +107,9 @@ def command_requirements(requirements, **kwargs):
 def pip_requirements(requirements, basename):
     """Get the full list of ``pip`` arguments needed from `requirements`."""
     pip_arguments = []
-    for a_file in requirements.get(FROM_FILES, []):
+    for a_file in requirements.get(const.FROM_FILES, []):
         pip_arguments.append("-r")
         pip_arguments.append(a_file)
-    for package_spec in requirements.get(FROM_PACKAGES, []):
+    for package_spec in requirements.get(const.FROM_PACKAGES, []):
         pip_arguments.append(package_spec.format(basename=basename))
     return pip_arguments

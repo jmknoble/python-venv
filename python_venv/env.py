@@ -6,14 +6,7 @@ import shutil
 import stat
 import sys
 
-from . import exceptions, reqs, runcommand
-
-PYTHON = "python3"
-CONDA = "conda"
-VENV_DIR = ".venv"
-DEV_SUFFIX = "-dev"
-
-MESSAGE_PREFIX = "==> "
+from . import const, exceptions, reqs, runcommand
 
 ####################
 
@@ -92,10 +85,10 @@ class BaseVirtualEnvironment(object):
         self._env_description = None
 
         if self.message_prefix is None:
-            self.message_prefix = MESSAGE_PREFIX
+            self.message_prefix = const.MESSAGE_PREFIX
 
         if self.python is None:
-            self.python = PYTHON
+            self.python = const.PYTHON
 
         if self.os_environ is None:
             self.os_environ = os.environ
@@ -106,7 +99,7 @@ class BaseVirtualEnvironment(object):
         if suffix and not message.endswith("."):
             message_parts.append(suffix)
         runcommand.print_trace(
-            message_parts, trace_prefix=MESSAGE_PREFIX, dry_run=self.dry_run
+            message_parts, trace_prefix=const.MESSAGE_PREFIX, dry_run=self.dry_run
         )
 
     @property
@@ -209,7 +202,7 @@ class VenvEnvironment(BaseVirtualEnvironment):
     def env_name(self):
         """Get the name for this environment."""
         if self._env_name is None:
-            self._env_name = VENV_DIR
+            self._env_name = const.VENV_DIR
         return self._env_name
 
     @property
@@ -342,7 +335,7 @@ class CondaEnvironment(BaseVirtualEnvironment):
         if self._env_name is None:
             self._env_name = self.basename
             if reqs.is_dev_req_scheme(self.req_scheme):
-                self._env_name += DEV_SUFFIX
+                self._env_name += const.DEV_SUFFIX
         return self._env_name
 
     def have_env_prefix(self):
@@ -364,7 +357,7 @@ class CondaEnvironment(BaseVirtualEnvironment):
             return "CONDA_ENV_DIR"
 
         env_listing = runcommand.run_command(
-            [CONDA, "env", "list"],
+            [const.CONDA, "env", "list"],
             return_output=True,
             show_trace=False,
             dry_run=self.dry_run,
@@ -422,7 +415,7 @@ class CondaEnvironment(BaseVirtualEnvironment):
         ):
             raise exceptions.EnvExistsError(f"Found preexisting {self.env_name}")
 
-        conda_command = [CONDA, "create", "--quiet"]
+        conda_command = [const.CONDA, "create", "--quiet"]
         if self.force:
             conda_command.append("--yes")
         if self.have_env_prefix():
@@ -478,7 +471,7 @@ class CondaEnvironment(BaseVirtualEnvironment):
             self.progress(f"Good news!  There is no {self.env_description}.")
             return
 
-        conda_command = [CONDA, "env", "remove", "--quiet"]
+        conda_command = [const.CONDA, "env", "remove", "--quiet"]
         if self.force:
             conda_command.append("--yes")
         if self.have_env_prefix():

@@ -10,15 +10,7 @@ except ModuleNotFoundError:
     # Enable running without autocompletion
     pass
 
-from . import argparsing, completion, env, exceptions, get_version, reqs
-
-STATUS_SUCCESS = 0
-STATUS_FAILURE = 1
-STATUS_HELP = 2
-
-PYTHON = "python3"
-
-PYTHON_VERSION_REGEX = r"^[0-9]+(\.[0-9]+){0,2}"  # Must start with X, X.Y, or X.Y.Z
+from . import argparsing, completion, const, env, exceptions, get_version, reqs
 
 COMMAND_CREATE = "create"
 COMMAND_REMOVE = "remove"
@@ -56,14 +48,6 @@ VENV_CREATE_COMMANDS = [
     COMMAND_REPLACE,
 ]
 
-ENV_TYPE_VENV = "venv"
-ENV_TYPE_CONDA = "conda"
-
-ENV_TYPES = [
-    ENV_TYPE_VENV,
-    ENV_TYPE_CONDA,
-]
-
 DESCRIPTION_MAIN = f"""
 Create or remove a Python virtual environment for the Python project in the
 current directory.  We expect a 'setup.py' to exist, along with requirements in
@@ -73,7 +57,7 @@ and '{reqs.REQUIREMENTS_TEST}'.
 Venv virtual environments are created in '{env.VENV_DIR}'.
 
 Conda virtual environments are created using the name of the Python project
-(via '{PYTHON} setup.py --name'), with underscores ('_') replaced by hyphens ('-')
+(via '{const.PYTHON} setup.py --name'), with underscores ('_') replaced by hyphens ('-')
 and with '{env.DEV_SUFFIX}' appended for development environments.
 """
 
@@ -122,8 +106,8 @@ def _add_venv_arguments(argparser, req_scheme_required=False, **_kwargs):
         default=None,
         help=(
             f"Base name to use when inferring environment name or package name "
-            f"(default: the result of '{PYTHON} setup.py --name', with underscores "
-            f"replaced by hyphens)"
+            f"(default: the result of '{const.PYTHON} setup.py --name', with "
+            f"underscores replaced by hyphens)"
         ),
     )
 
@@ -186,7 +170,7 @@ def _add_venv_arguments(argparser, req_scheme_required=False, **_kwargs):
         dest="req_scheme",
         const=reqs.REQ_SCHEME_SOURCE,
         help=("Virtual environment uses '{command}'").format(
-            command=" ".join(reqs.REQUIREMENTS_SOURCE).format(python=PYTHON)
+            command=" ".join(reqs.REQUIREMENTS_SOURCE).format(python=const.PYTHON)
         ),
     )
 
@@ -197,24 +181,24 @@ def _add_venv_arguments(argparser, req_scheme_required=False, **_kwargs):
         "--type",
         action="store",
         dest="env_type",
-        choices=ENV_TYPES,
+        choices=const.ENV_TYPES,
         help="The type of environment to create",
     )
     venv_mutex_group.add_argument(
         "-v",
-        f"--{ENV_TYPE_VENV}",
+        f"--{const.ENV_TYPE_VENV}",
         action="store_const",
         dest="env_type",
-        const=ENV_TYPE_VENV,
-        help=f"Same as '--type {ENV_TYPE_VENV}'",
+        const=const.ENV_TYPE_VENV,
+        help=f"Same as '--type {const.ENV_TYPE_VENV}'",
     )
     venv_mutex_group.add_argument(
         "-c",
-        f"--{ENV_TYPE_CONDA}",
+        f"--{const.ENV_TYPE_CONDA}",
         action="store_const",
         dest="env_type",
-        const=ENV_TYPE_CONDA,
-        help=f"Same as '--type {ENV_TYPE_CONDA}'",
+        const=const.ENV_TYPE_CONDA,
+        help=f"Same as '--type {const.ENV_TYPE_CONDA}'",
     )
 
     venv_group.add_argument(
@@ -284,11 +268,11 @@ def _add_version_arguments(prog, argparser, **_kwargs):
 
 def _check_create_args(args):
     if args.python_version is not None:
-        if args.env_type != ENV_TYPE_CONDA:
+        if args.env_type != const.ENV_TYPE_CONDA:
             raise RuntimeError(
                 "'--python-version' only makes sense with '--type conda'"
             )
-        if re.match(PYTHON_VERSION_REGEX, args.python_version) is None:
+        if re.match(const.PYTHON_VERSION_REGEX, args.python_version) is None:
             raise RuntimeError(
                 f"--python-version: {args.python_version}: must start with a "
                 "major, major.minor, or major.minor.micro version "
@@ -300,7 +284,7 @@ def _get_virtual_env(args):
     kwargs = {
         "dry_run": args.dry_run,
         "force": args.force,
-        "python": PYTHON,
+        "python": const.PYTHON,
         "basename": args.basename,
         "env_name": args.env_name,
     }
@@ -310,9 +294,9 @@ def _get_virtual_env(args):
     except AttributeError:  # args.python_version may not exist
         pass
 
-    if args.env_type == ENV_TYPE_VENV:
+    if args.env_type == const.ENV_TYPE_VENV:
         virtual_env = env.VenvEnvironment(args.req_scheme, **kwargs)
-    elif args.env_type == ENV_TYPE_CONDA:
+    elif args.env_type == const.ENV_TYPE_CONDA:
         virtual_env = env.CondaEnvironment(args.req_scheme, **kwargs)
 
     return virtual_env
@@ -321,24 +305,24 @@ def _get_virtual_env(args):
 def _command_action_create(_prog, args):
     _check_create_args(args)
     _get_virtual_env(args).create()
-    return STATUS_SUCCESS
+    return const.STATUS_SUCCESS
 
 
 def _command_action_remove(_prog, args):
     # set equivalence
-    if {args.env_type, args.env_name, args.req_scheme} == {ENV_TYPE_CONDA, None}:
+    if {args.env_type, args.env_name, args.req_scheme} == {const.ENV_TYPE_CONDA, None}:
         raise RuntimeError(
             "Please supply either the '-e/--env-name' or '-r/--requirements' "
             "option so we know the name of the environment to remove."
         )
     _get_virtual_env(args).remove()
-    return STATUS_SUCCESS
+    return const.STATUS_SUCCESS
 
 
 def _command_action_replace(_prog, args):
     _check_create_args(args)
     _get_virtual_env(args).replace()
-    return STATUS_SUCCESS
+    return const.STATUS_SUCCESS
 
 
 def _command_action_completion(prog, args):
@@ -348,7 +332,7 @@ def _command_action_completion(prog, args):
         completion_args = [COMMAND_COMPLETION, "--bash"]
         print(completion.get_instructions(prog, completion_args))
 
-    return STATUS_SUCCESS
+    return const.STATUS_SUCCESS
 
 
 def _populate_command_actions(commands, prog):
@@ -406,7 +390,7 @@ def main(*argv):
     args = argparser.parse_args(argv)
     if args.command is None:
         argparser.print_usage()
-        sys.exit(STATUS_HELP)  # Same behavior as argparse usage messages
+        sys.exit(const.STATUS_HELP)  # Same behavior as argparse usage messages
 
     try:
         try:
@@ -430,7 +414,7 @@ def main(*argv):
 
     except RuntimeError as e:
         print(f"{prog}: error: {e}", file=sys.stderr)
-        return STATUS_FAILURE
+        return const.STATUS_FAILURE
 
     raise RuntimeError(f"Unhandled subcommand: {args.command}")
 
