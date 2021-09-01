@@ -171,6 +171,176 @@ class TestRequirements(unittest.TestCase):
 
     # TODO: Better testing of reqs.ReqScheme().fulfill()
 
+    def test_PV_RQ_60_pip_argify_files(self):
+        self._set_dummy_requirements()
+        x = reqs.ReqScheme("dummy_req_scheme")
+        files = ["dummy_one", "dummy_two"]
+        expected = ["-r", "dummy_one", "-r", "dummy_two"]
+        result = x._pip_argify_files(files)
+        self.assertListEqual(result, expected)
+
+    @parameterized.parameterized.expand(
+        [
+            ("none", {}, []),
+            ("empty", {const.FROM_FILES: []}, []),
+            (
+                "full",
+                {const.FROM_FILES: ["dummy_one", "dummy_two"]},
+                ["dummy_one", "dummy_two"],
+            ),
+            (
+                "multi",
+                {
+                    const.FROM_PACKAGES: ["dummy_package"],
+                    const.FROM_FILES: ["dummy_one", "dummy_two"],
+                },
+                ["dummy_one", "dummy_two"],
+            ),
+        ]
+    )
+    def test_PV_RQ_70_get_requirements_files(self, name, entry, expected):
+        self._set_dummy_requirements()
+        x = reqs.ReqScheme("dummy_req_scheme")
+        result = x._get_requirements_files(entry)
+        self.assertListEqual(result, expected)
+
+    @parameterized.parameterized.expand(
+        [
+            ("none", {}, []),
+            ("empty", {const.FROM_PACKAGES: []}, []),
+            (
+                "full",
+                {const.FROM_PACKAGES: ["dummy_one", "dummy_two"]},
+                ["dummy_one", "dummy_two"],
+            ),
+            (
+                "templated",
+                {const.FROM_PACKAGES: ["{basename}_one", "{basename}_two"]},
+                ["dummy_one", "dummy_two"],
+            ),
+            (
+                "multi",
+                {
+                    const.FROM_PACKAGES: ["dummy_package"],
+                    const.FROM_FILES: ["dummy_one", "dummy_two"],
+                },
+                ["dummy_package"],
+            ),
+        ]
+    )
+    def test_PV_RQ_71_get_requirements_packages(self, name, entry, expected):
+        self._set_dummy_requirements()
+        x = reqs.ReqScheme("dummy_req_scheme", basename="dummy")
+        result = x._get_requirements_packages(entry)
+        self.assertListEqual(result, expected)
+
+    @parameterized.parameterized.expand(
+        [
+            ("none", {}, []),
+            ("empty", {const.FROM_COMMANDS: []}, []),
+            (
+                "full",
+                {const.FROM_COMMANDS: [["dummy_command", "dummy_arg"]]},
+                [["dummy_command", "dummy_arg"]],
+            ),
+            (
+                "templated",
+                {
+                    const.FROM_COMMANDS: [
+                        ["{python}", "-m", "dummy_module", "dummy_arg"]
+                    ]
+                },
+                [["schmython", "-m", "dummy_module", "dummy_arg"]],
+            ),
+            (
+                "multi",
+                {
+                    const.FROM_COMMANDS: [
+                        ["dummy_command1", "dummy_arg1"],
+                        ["dummy_command2"],
+                    ]
+                },
+                [["dummy_command1", "dummy_arg1"], ["dummy_command2"]],
+            ),
+        ]
+    )
+    def test_PV_RQ_72_get_requirements_commands(self, name, entry, expected):
+        self._set_dummy_requirements()
+        x = reqs.ReqScheme("dummy_req_scheme", python="schmython")
+        result = x._get_requirements_commands(entry)
+        self.assertListEqual(result, expected)
+
+    @parameterized.parameterized.expand(
+        [
+            ("none", {}, []),
+            ("empty", {const.FROM_FILES: []}, []),
+            (
+                "files_only",
+                {const.FROM_FILES: ["dummy_one", "dummy_two"]},
+                ["-r", "dummy_one", "-r", "dummy_two"],
+            ),
+            (
+                "packages_only",
+                {const.FROM_PACKAGES: ["dummy_package_1", "dummy_package_2"]},
+                ["dummy_package_1", "dummy_package_2"],
+            ),
+            (
+                "packages_templated",
+                {const.FROM_PACKAGES: ["{basename}_package"]},
+                ["dummy_package"],
+            ),
+            (
+                "multi",
+                {
+                    const.FROM_PACKAGES: ["dummy_package"],
+                    const.FROM_FILES: ["dummy_one", "dummy_two"],
+                },
+                ["-r", "dummy_one", "-r", "dummy_two", "dummy_package"],
+            ),
+        ]
+    )
+    def test_PV_RQ_80_collect_pip_arguments(self, name, entry, expected):
+        self._set_dummy_requirements()
+        x = reqs.ReqScheme("dummy_req_scheme", basename="dummy")
+        result = x._collect_pip_arguments(entry)
+        self.assertListEqual(result, expected)
+
+    @parameterized.parameterized.expand(
+        [
+            ("none", {}, []),
+            ("empty", {const.FROM_COMMANDS: []}, []),
+            (
+                "full",
+                {const.FROM_COMMANDS: [["dummy_command", "dummy_arg"]]},
+                [["dummy_command", "dummy_arg"]],
+            ),
+            (
+                "templated",
+                {
+                    const.FROM_COMMANDS: [
+                        ["{python}", "-m", "dummy_module", "dummy_arg"]
+                    ]
+                },
+                [["schmython", "-m", "dummy_module", "dummy_arg"]],
+            ),
+            (
+                "multi",
+                {
+                    const.FROM_COMMANDS: [
+                        ["dummy_command1", "dummy_arg1"],
+                        ["dummy_command2"],
+                    ]
+                },
+                [["dummy_command1", "dummy_arg1"], ["dummy_command2"]],
+            ),
+        ]
+    )
+    def test_PV_RQ_81_collect_commands(self, name, entry, expected):
+        self._set_dummy_requirements()
+        x = reqs.ReqScheme("dummy_req_scheme", python="schmython")
+        result = x._collect_commands(entry)
+        self.assertListEqual(result, expected)
+
     def test_PV_RQ_100_check_requirements_for_scheme_plain(self):
         # we expect to run from python_venv's project directory,
         # where 'requirements.txt' exists.

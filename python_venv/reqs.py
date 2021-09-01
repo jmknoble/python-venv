@@ -156,25 +156,54 @@ class ReqScheme(object):
         }
         return [x.format(**replacements) for x in strings]
 
+    def _pip_argify_files(self, files):
+        pip_arguments = []
+        for a_file in files:
+            pip_arguments.append("-r")
+            pip_arguments.append(a_file)
+        return pip_arguments
+
+    def _get_requirements_files(self, entry):
+        return entry.get(const.FROM_FILES, [])
+
+    def _get_requirements_packages(self, entry):
+        return self._replace(entry.get(const.FROM_PACKAGES, []))
+
+    def _get_requirements_commands(self, entry):
+        return [self._replace(x) for x in entry.get(const.FROM_COMMANDS, [])]
+
+    def _collect_pip_arguments(self, entry):
+        pip_arguments = self._pip_argify_files(self._get_requirements_files(entry))
+        pip_arguments.extend(self._get_requirements_packages(entry))
+        return pip_arguments
+
+    def _collect_commands(self, entry):
+        return self._get_requirements_commands(entry)
+
     def fulfill(self, upgrade=False):
         """Fulfill the requirements specified in the scheme."""
         for entry in self.requirements:
-            for (whence, sources) in entry.items():
-                if whence == const.FROM_FILES:
-                    self._fulfill_files(sources, upgrade=upgrade)
-                elif whence == const.FROM_PACKAGES:
-                    self._fulfill_packages(sources, upgrade=upgrade)
-                elif whence == const.FROM_COMMANDS:
-                    self._fulfill_commands(sources)
-                else:
+            pip_arguments = self._collect_pip_arguments(entry)
+            commands = self._collect_commands(entry)
+            if pip_arguments:
+                self._fulfill_pip_requirements(pip_arguments, upgrade=upgrade)
+            if commands:
+                self._fulfill_commands(commands)
+            for whence in entry:
+                if whence not in {
+                    const.FROM_FILES,
+                    const.FROM_PACKAGES,
+                    const.FROM_COMMANDS,
+                }:
                     raise IndexError(f"Unhandled requirement source: {whence}")
 
     def _fulfill_pip_requirements(self, pip_arguments, upgrade):
         pip_install_command = self.pip_install_command
         if upgrade:
-            pip_install_command += ["--upgrade"]
+            pip_install_command.append("--upgrade")
+        pip_install_command.extend(pip_arguments)
         runcommand.run_command(
-            pip_install_command + pip_arguments,
+            pip_install_command,
             show_trace=self.show_trace,
             dry_run=self.dry_run,
             env=self.env,
@@ -182,20 +211,10 @@ class ReqScheme(object):
             stderr=self.stderr,
         )
 
-    def _fulfill_packages(self, package_specs, upgrade):
-        self._fulfill_pip_requirements(self._replace(package_specs), upgrade=upgrade)
-
-    def _fulfill_files(self, files, upgrade):
-        pip_arguments = []
-        for a_file in files:
-            pip_arguments.append("-r")
-            pip_arguments.append(a_file)
-        self._fulfill_pip_requirements(pip_arguments, upgrade=upgrade)
-
     def _fulfill_commands(self, commands):
         for command in commands:
             runcommand.run_command(
-                self._replace(command),
+                command,
                 show_trace=self.show_trace,
                 dry_run=self.dry_run,
                 env=self.env,
@@ -207,7 +226,7 @@ class ReqScheme(object):
         """Check the requirements sources for missing things."""
         missing = []
         for entry in self.requirements:
-            for requirements_file in entry.get(const.FROM_FILES, []):
+            for requirements_file in self._get_requirements_files(entry):
                 if not os.path.exists(requirements_file):
                     missing.append(requirements_file)
         if missing:
