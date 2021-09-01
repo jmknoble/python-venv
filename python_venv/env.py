@@ -105,9 +105,13 @@ class BaseVirtualEnvironment(object):
     @property
     def requirements(self):
         """Get the requirements sources for this environment."""
-        # TODO: Is this necessary?
         if self._requirements is None:
-            self._requirements = reqs.requirements_sources_for_scheme(self.req_scheme)
+            self._requirements = reqs.ReqScheme(
+                self.req_scheme,
+                basename=self.basename,
+                dry_run=self.dry_run,
+                env=self.os_environ,
+            )
         return self._requirements
 
     @property
@@ -171,7 +175,7 @@ class BaseVirtualEnvironment(object):
     def preflight_checks_for_create(self):
         """Run preflight checks needed before creating this environment."""
         if not self.ignore_preflight_checks:
-            reqs.check_requirements_for_scheme(self.req_scheme)
+            self.requirements.check()
 
     def create(self, check_preexisting=True, run_preflight_checks=True, emit_done=True):
         """Create the environment (abstract method)."""
@@ -200,18 +204,6 @@ class VenvEnvironment(BaseVirtualEnvironment):
     """Model a Python3 `venv`:py:mod: virtual environment."""
 
     @property
-    def requirements(self):
-        """Get the requirements sources for this environment."""
-        if self._requirements is None:
-            self._requirements = reqs.ReqScheme(
-                self.req_scheme,
-                basename=self.basename,
-                dry_run=self.dry_run,
-                env=self.os_environ,
-            )
-        return self._requirements
-
-    @property
     def env_name(self):
         """Get the name for this environment."""
         if self._env_name is None:
@@ -234,11 +226,6 @@ class VenvEnvironment(BaseVirtualEnvironment):
                 f"{self.abs_env_dir} exists, but is not a directory"
             )
         return False
-
-    def preflight_checks_for_create(self):
-        """Run preflight checks needed before creating this environment."""
-        if not self.ignore_preflight_checks:
-            self.requirements.check()
 
     def create(self, check_preexisting=True, run_preflight_checks=True, emit_done=True):
         """Create this environment."""
@@ -332,7 +319,7 @@ class CondaEnvironment(BaseVirtualEnvironment):
         """Get the name for this environment."""
         if self._env_name is None:
             self._env_name = self.basename
-            if reqs.is_dev_req_scheme(self.req_scheme):
+            if self.requirements.is_dev():
                 self._env_name += const.DEV_SUFFIX
         return self._env_name
 
@@ -434,25 +421,8 @@ class CondaEnvironment(BaseVirtualEnvironment):
 
         self.progress(f"Installing {self.req_scheme} requirements")
 
-        for command in reqs.command_requirements(self.requirements, python=env_python):
-            runcommand.run_command(
-                command,
-                show_trace=True,
-                dry_run=self.dry_run,
-                env=self.os_environ,
-                stdout=sys.stdout,
-                stderr=sys.stderr,
-            )
-        if reqs.requirements_need_pip(self.requirements):
-            runcommand.run_command(
-                [env_python, "-m", "pip", "install"]
-                + reqs.pip_requirements(self.requirements, self.basename),
-                show_trace=True,
-                dry_run=self.dry_run,
-                env=self.os_environ,
-                stdout=sys.stdout,
-                stderr=sys.stderr,
-            )
+        self.requirements.use_python(env_python)
+        self.requirements.fulfill()
         if emit_done:
             self.progress("Done.")
             if not self.dry_run:

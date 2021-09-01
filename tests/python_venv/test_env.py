@@ -115,9 +115,9 @@ class TestEnv_010_BaseVirtualEnvironment(unittest.TestCase):
 
     def test_PV_ENV_BAS_010_requirements(self):
         dummy_requirements = {"dummy_req_source": ["dummy_value"]}
-        reqs.REQUIREMENTS = {"dummy_req_scheme": dummy_requirements}
+        reqs.REQUIREMENTS = {"dummy_req_scheme": [dummy_requirements]}
         x = env.BaseVirtualEnvironment("dummy_req_scheme")
-        self.assertDictEqual(x.requirements, dummy_requirements)
+        self.assertListEqual(x.requirements.requirements, [dummy_requirements])
 
     def test_PV_ENV_BAS_020_package_name(self):
         x = env.BaseVirtualEnvironment("dummy_req_scheme")
@@ -221,9 +221,9 @@ class TestEnv_100_VenvEnvironment(unittest.TestCase):
 
     def test_PV_ENV_VNV_010_requirements(self):
         dummy_requirements = {"dummy_req_source": ["dummy_requirement"]}
-        reqs.REQUIREMENTS = {"dummy_req_scheme": dummy_requirements}
+        reqs.REQUIREMENTS = {"dummy_req_scheme": [dummy_requirements]}
         x = env.VenvEnvironment("dummy_req_scheme")
-        self.assertDictEqual(x.requirements, dummy_requirements)
+        self.assertListEqual(x.requirements.requirements, [dummy_requirements])
 
     def test_PV_ENV_VNV_020_package_name(self):
         x = env.VenvEnvironment("dummy_req_scheme")
@@ -350,7 +350,7 @@ class TestEnv_100_VenvEnvironment(unittest.TestCase):
     )
     def test_PV_ENV_VNV_100_create_dry_run(self, name, expected_text):
         dummy_requirements = {const.FROM_FILES: ["dummy_requirements.txt"]}
-        reqs.REQUIREMENTS = {"dummy_req_scheme": dummy_requirements}
+        reqs.REQUIREMENTS = {"dummy_req_scheme": [dummy_requirements]}
         x = env.VenvEnvironment(
             "dummy_req_scheme",
             dry_run=True,
@@ -388,7 +388,7 @@ class TestEnv_100_VenvEnvironment(unittest.TestCase):
     )
     def test_PV_ENV_VNV_300_replace_dry_run(self, name, expected_text):
         dummy_requirements = {const.FROM_FILES: ["dummy_requirements.txt"]}
-        reqs.REQUIREMENTS = {"dummy_req_scheme": dummy_requirements}
+        reqs.REQUIREMENTS = {"dummy_req_scheme": [dummy_requirements]}
         x = env.VenvEnvironment(
             "dummy_req_scheme",
             dry_run=True,
@@ -961,9 +961,9 @@ class TestEnv_200_CondaEnvironment(unittest.TestCase):
 
     def test_PV_ENV_CDA_010_requirements(self):
         dummy_requirements = {"dummy_req_source": ["dummy_requirement"]}
-        reqs.REQUIREMENTS = {"dummy_req_scheme": dummy_requirements}
+        reqs.REQUIREMENTS = {"dummy_req_scheme": [dummy_requirements]}
         x = env.CondaEnvironment("dummy_req_scheme")
-        self.assertDictEqual(x.requirements, dummy_requirements)
+        self.assertListEqual(x.requirements.requirements, [dummy_requirements])
 
     def test_PV_ENV_CDA_020_package_name(self):
         x = env.CondaEnvironment("dummy_req_scheme")
@@ -982,11 +982,11 @@ class TestEnv_200_CondaEnvironment(unittest.TestCase):
 
     @parameterized.parameterized.expand(
         [
-            ("default", "dummy_req_scheme", {}, "python-venv"),
+            ("default", reqs.REQ_SCHEME_PLAIN, {}, "python-venv"),
             ("default_dev", reqs.REQ_SCHEME_DEV, {}, "python-venv-dev"),
             (
                 "basename",
-                "dummy_req_scheme",
+                reqs.REQ_SCHEME_PLAIN,
                 {"basename": "dummy-package"},
                 "dummy-package",
             ),
@@ -1033,7 +1033,7 @@ class TestEnv_200_CondaEnvironment(unittest.TestCase):
             kwargs["env_name"] = env_name
         if env_prefix is not None:
             kwargs["env_prefix"] = env_prefix
-        x = env.CondaEnvironment("dummy_req_scheme", dry_run=True, **kwargs)
+        x = env.CondaEnvironment(reqs.REQ_SCHEME_PLAIN, dry_run=True, **kwargs)
         self.assertEqual(x.env_dir, expected)
 
     @parameterized.parameterized.expand(
@@ -1072,7 +1072,7 @@ class TestEnv_200_CondaEnvironment(unittest.TestCase):
             kwargs["env_name"] = env_name
         if env_prefix is not None:
             kwargs["env_prefix"] = env_prefix
-        x = env.CondaEnvironment("dummy_req_scheme", dry_run=True, **kwargs)
+        x = env.CondaEnvironment(reqs.REQ_SCHEME_PLAIN, dry_run=True, **kwargs)
         self.assertEqual(x.abs_env_dir, expected)
 
     @parameterized.parameterized.expand(
@@ -1107,7 +1107,7 @@ class TestEnv_200_CondaEnvironment(unittest.TestCase):
     )
     def test_PV_ENV_CDA_100_create_dry_run(self, name, kwargs, expected_text):
         dummy_requirements = {const.FROM_FILES: ["dummy_requirements.txt"]}
-        reqs.REQUIREMENTS = {"dummy_req_scheme": dummy_requirements}
+        reqs.REQUIREMENTS = {"dummy_req_scheme": [dummy_requirements]}
         x = env.CondaEnvironment(
             "dummy_req_scheme",
             dry_run=True,
@@ -1130,7 +1130,7 @@ class TestEnv_200_CondaEnvironment(unittest.TestCase):
     )
     def test_PV_ENV_CDA_200_remove_dry_run(self, name, expected_text):
         x = env.CondaEnvironment(
-            "dummy_req_scheme", dry_run=True, basename="dummy-package"
+            reqs.REQ_SCHEME_PLAIN, dry_run=True, basename="dummy-package"
         )
         with ctx.capture(x.remove) as (status, _stdout, stderr):
             self.assertTrue(expected_text in stderr)
@@ -1146,7 +1146,7 @@ class TestEnv_200_CondaEnvironment(unittest.TestCase):
     )
     def test_PV_ENV_CDA_300_replace_dry_run(self, name, expected_text):
         dummy_requirements = {const.FROM_FILES: ["dummy_requirements.txt"]}
-        reqs.REQUIREMENTS = {"dummy_req_scheme": dummy_requirements}
+        reqs.REQUIREMENTS = {"dummy_req_scheme": [dummy_requirements]}
         x = env.CondaEnvironment(
             "dummy_req_scheme",
             dry_run=True,

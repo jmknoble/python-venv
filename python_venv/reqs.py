@@ -34,90 +34,7 @@ ALL_REQ_SCHEMES = [
     REQ_SCHEME_SOURCE,
 ]
 
-########################################
-
 REQUIREMENTS = {
-    REQ_SCHEME_PLAIN: {
-        const.FROM_FILES: [REQUIREMENTS_PLAIN],
-    },
-    REQ_SCHEME_DEV: {
-        const.FROM_FILES: [
-            REQUIREMENTS_PLAIN,
-            REQUIREMENTS_BUILD,
-            REQUIREMENTS_DEV,
-            REQUIREMENTS_TEST,
-        ],
-    },
-    REQ_SCHEME_FROZEN: {
-        const.FROM_FILES: [REQUIREMENTS_FROZEN],
-    },
-    REQ_SCHEME_PACKAGE: {
-        const.FROM_PACKAGES: [REQUIREMENTS_PACKAGE],
-    },
-    REQ_SCHEME_SOURCE: {
-        const.FROM_COMMANDS: [REQUIREMENTS_SOURCE],
-    },
-}
-
-
-def requirements_for_venv():
-    """Get the requirements specific to Python venvs."""
-    return REQUIREMENTS_VENV
-
-
-def requirements_sources_for_scheme(req_scheme):
-    """Get the lists of requirements for the given requirements scheme."""
-    return REQUIREMENTS[req_scheme]
-
-
-def check_requirements_for_scheme(req_scheme):
-    """Check the requirements sources for `req_scheme` for missing ones."""
-    missing = []
-    for requirements_file in requirements_sources_for_scheme(req_scheme).get(
-        const.FROM_FILES, []
-    ):
-        if not os.path.exists(requirements_file):
-            missing.append(requirements_file)
-    if missing:
-        noun = "file" if len(missing) == 1 else "files"
-        raise exceptions.MissingRequirementsError(
-            f"Missing requirements {noun}", missing
-        )
-
-
-def any_requirements_from(requirements, whence):
-    """Tell whether `requirements` has a ``FROM_*`` key in `whence`."""
-    return set(requirements) & whence  # set intersection
-
-
-def requirements_need_pip(requirements):
-    """Tell whether `requirements` has a ``FROM_*`` key that needs ``pip``."""
-    return any_requirements_from(requirements, {const.FROM_FILES, const.FROM_PACKAGES})
-
-
-def command_requirements(requirements, **kwargs):
-    """Get any non-``pip`` commands from `requirements`."""
-    commands = []
-    for command in requirements.get(const.FROM_COMMANDS, []):
-        commands.append([x.format(**kwargs) for x in command])
-    return commands
-
-
-def pip_requirements(requirements, basename):
-    """Get the full list of ``pip`` arguments needed from `requirements`."""
-    pip_arguments = []
-    for a_file in requirements.get(const.FROM_FILES, []):
-        pip_arguments.append("-r")
-        pip_arguments.append(a_file)
-    for package_spec in requirements.get(const.FROM_PACKAGES, []):
-        pip_arguments.append(package_spec.format(basename=basename))
-    return pip_arguments
-
-
-########################################
-
-
-REQUIREMENTS_NEW = {
     REQ_SCHEME_PLAIN: [
         {const.FROM_FILES: [REQUIREMENTS_PLAIN]},
     ],
@@ -140,6 +57,9 @@ REQUIREMENTS_NEW = {
     REQ_SCHEME_SOURCE: [
         {const.FROM_COMMANDS: [REQUIREMENTS_SOURCE]},
     ],
+}
+
+SPECIAL_REQUIREMENTS = {
     REQ_SCHEME_VENV: [
         {const.FROM_PACKAGES: REQUIREMENTS_VENV},
     ],
@@ -202,24 +122,32 @@ class ReqScheme(object):
         self.env = env
         self.stdout = sys.stdout if stdout is None else stdout
         self.stderr = sys.stderr if stderr is None else stderr
-        self.requirements = self._get_requirements(self.scheme)
+        self.requirements = self._get_requirements()
         self._set_pip_install_command()
 
-    def _get_requirements(self, scheme):
-        scheme = scheme if scheme else self.scheme
-        return REQUIREMENTS_NEW[scheme]
-
-    def use_python(self, python):
-        """Set the path to the Python interpreter to use."""
-        self.python = python
-        self._set_pip_install_command()
-
-    def _set_pip_install_command(self):
-        self.pip_install_command = [self.python, "-m", "pip", "install"]
+    def _get_requirements(self):
+        # TODO: Turn this into an @property
+        found = REQUIREMENTS.get(
+            self.scheme, SPECIAL_REQUIREMENTS.get(self.scheme, None)
+        )
+        if found is None:
+            raise KeyError(self.scheme)
+        return found
 
     def is_dev(self):
         """Tell whether this is a development requirements scheme."""
         return self.scheme in DEV_REQ_SCHEMES
+
+    def use_python(self, python):
+        """Set the path to the Python interpreter to use."""
+        # TODO: Turn this into an @property
+        self.python = python
+        self._set_pip_install_command()
+
+    def _set_pip_install_command(self):
+        self.pip_install_command = (
+            None if self.python is None else [self.python, "-m", "pip", "install"]
+        )
 
     def _replace(self, strings):
         replacements = {

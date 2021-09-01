@@ -17,6 +17,14 @@ class TestRequirements(unittest.TestCase):
     def tearDown(self):
         reqs.REQUIREMENTS = self.saved_requirements
 
+    def _set_dummy_requirements(self):
+        self.dummy_requirements = [
+            {"from_dummy": ["dummy_one", "dummy_two"]},
+        ]
+        reqs.REQUIREMENTS = {
+            "dummy_req_scheme": self.dummy_requirements,
+        }
+
     def test_PV_RQ_000_symbols_exist(self):
         _ = reqs.REQUIREMENTS_VENV
         _ = reqs.REQUIREMENTS_PLAIN
@@ -55,174 +63,125 @@ class TestRequirements(unittest.TestCase):
     def test_PV_RQ_002_symbol_groups(self, name, group):
         self.assertGreater(len(group), 0)
 
-    def test_PV_RQ_010_is_dev_req_scheme(self):
-        self.assertTrue(reqs.is_dev_req_scheme(reqs.REQ_SCHEME_DEV))
-        self.assertFalse(reqs.is_dev_req_scheme(reqs.REQ_SCHEME_PLAIN))
-        self.assertFalse(reqs.is_dev_req_scheme(None))
+    def test_PV_RQ_010_instantiate(self):
+        self._set_dummy_requirements()
+        reqs.ReqScheme("dummy_req_scheme")
 
-    def test_PV_RQ_020_requirements_for_venv(self):
-        self.assertEqual(reqs.requirements_for_venv(), reqs.REQUIREMENTS_VENV)
+    def test_PV_RQ_011_instantiate_with_args(self):
+        self._set_dummy_requirements()
+        dummy_env_dict = {"dummy_envariable": "dummy_value"}
+        x = reqs.ReqScheme(
+            "dummy_req_scheme",
+            python="schmython",
+            basename="dummy_basename",
+            dry_run=True,
+            show_trace=False,
+            env=dummy_env_dict,
+            stdout="dummy_stdout",
+            stderr="dummy_stderr",
+        )
+        self.assertEqual(x.scheme, "dummy_req_scheme")
+        self.assertEqual(x.python, "schmython")
+        self.assertEqual(x.basename, "dummy_basename")
+        self.assertTrue(x.dry_run)
+        self.assertFalse(x.show_trace)
+        self.assertDictEqual(x.env, dummy_env_dict)
+        self.assertEqual(x.stdout, "dummy_stdout")
+        self.assertEqual(x.stderr, "dummy_stderr")
 
     @parameterized.parameterized.expand(
         [
             ("plain", reqs.REQ_SCHEME_PLAIN),
             ("dev", reqs.REQ_SCHEME_DEV),
-            ("frozen", reqs.REQ_SCHEME_FROZEN),
-            ("package", reqs.REQ_SCHEME_PACKAGE),
-            ("source", reqs.REQ_SCHEME_SOURCE),
         ]
     )
-    def test_PV_RQ_030_requirements_sources_for_scheme(self, name, scheme):
-        _ = reqs.requirements_sources_for_scheme(scheme)
+    def test_PV_RQ_012_instantiate_with_real(self, name, scheme):
+        reqs.ReqScheme(scheme)
+
+    def test_PV_RQ_020_get_requirements(self):
+        self._set_dummy_requirements()
+        x = reqs.ReqScheme("dummy_req_scheme")
+        self.assertListEqual(x._get_requirements(), self.dummy_requirements)
+        self.assertListEqual(x.requirements, self.dummy_requirements)
+
+    def test_PV_RQ_021_get_requirements_venv(self):
+        self._set_dummy_requirements()
+        x = reqs.ReqScheme(reqs.REQ_SCHEME_VENV)
+        expected_requirements = reqs.SPECIAL_REQUIREMENTS[reqs.REQ_SCHEME_VENV]
+        self.assertListEqual(x.requirements, expected_requirements)
+        venv_packages = []
+        for entry in x.requirements:
+            if const.FROM_PACKAGES in entry:
+                venv_packages.extend(entry[const.FROM_PACKAGES])
+        self.assertIn("pip", venv_packages)
+        self.assertIn("setuptools", venv_packages)
+        self.assertIn("wheel", venv_packages)
+
+    def test_PV_RQ_022_get_requirements_raises(self):
+        self._set_dummy_requirements()
+        with self.assertRaises(KeyError) as raised:
+            reqs.ReqScheme("invalid_req_scheme")
+        self.assertEqual(raised.exception.args[0], "invalid_req_scheme")
 
     @parameterized.parameterized.expand(
         [
-            ("empty_requirements", {}, set("dummy"), False),
-            ("empty_whence", {"dummy_key": "dummy_val"}, set(), False),
-            ("happy_case1", {"dummy_key": "dummy_val"}, {"dummy_key"}, True),
-            (
-                "happy_case2",
-                {"dummy_key1": "dummy_val"},
-                {"dummy_key1", "dummy_key_2"},
-                True,
-            ),
-            (
-                "happy_case3",
-                {"dummy_key1": "dummy_val", "dummy_key2": "dummy_val2"},
-                {"dummy_key1"},
-                True,
-            ),
-            ("sad_case", {"dummy_key1": "dummy_val"}, {"not_dummy_key1"}, False),
+            ("plain", reqs.REQ_SCHEME_PLAIN, False),
+            ("dev", reqs.REQ_SCHEME_DEV, True),
         ]
     )
-    def test_PV_RQ_040_any_requirements_from(
-        self, name, requirements, whence, expected
-    ):
-        result = reqs.any_requirements_from(requirements, whence)
+    def test_PV_RQ_030_is_dev(self, name, scheme, expected):
+        x = reqs.ReqScheme(scheme)
         if expected:
-            self.assertTrue(result)
+            self.assertTrue(x.is_dev())
         else:
-            self.assertFalse(result)
+            self.assertFalse(x.is_dev())
+
+    def test_PV_RQ_040_use_python(self):
+        self._set_dummy_requirements()
+        x = reqs.ReqScheme("dummy_req_scheme")
+        self.assertIsNone(x.python)
+        x.use_python("schmython")
+        self.assertEqual(x.python, "schmython")
+
+    def test_PV_RQ_041_pip_install_command(self):
+        self._set_dummy_requirements()
+        x = reqs.ReqScheme("dummy_req_scheme")
+        self.assertIsNone(x.pip_install_command)
+        x.use_python("schmython")
+        self.assertListEqual(
+            x.pip_install_command, ["schmython", "-m", "pip", "install"]
+        )
 
     @parameterized.parameterized.expand(
         [
-            ("from_files", {const.FROM_FILES: "dummy"}, True),
-            ("from_packages", {const.FROM_PACKAGES: "dummy"}, True),
+            ("default", {}, "None None"),
+            ("none", {"python": None, "basename": None}, "None None"),
             (
-                "from_both",
-                {const.FROM_FILES: "dummy", const.FROM_PACKAGES: "dummy"},
-                True,
+                "actual",
+                {"python": "schmython", "basename": "dummy_basename"},
+                "schmython dummy_basename",
             ),
-            ("nope", {const.FROM_COMMANDS: "dummy"}, False),
-            ("empty", {}, False),
         ]
     )
-    def test_PV_RQ_050_requirements_need_pip(self, name, requirements, expected):
-        result = reqs.requirements_need_pip(requirements)
-        if expected:
-            self.assertTrue(result)
-        else:
-            self.assertFalse(result)
+    def test_PV_RQ_050_replace(self, name, kwargs, expected):
+        self._set_dummy_requirements()
+        x = reqs.ReqScheme("dummy_req_scheme", **kwargs)
+        result = x._replace(["{python} {basename}"])
+        self.assertListEqual(result, [expected])
 
-    @parameterized.parameterized.expand(
-        [
-            ("none", {}, {}, []),
-            ("simple", {const.FROM_COMMANDS: [["dummy"]]}, {}, [["dummy"]]),
-            (
-                "multi",
-                {const.FROM_COMMANDS: [["dummy1"], ["dummy2"]]},
-                {},
-                [["dummy1"], ["dummy2"]],
-            ),
-            (
-                "formatted1",
-                {const.FROM_COMMANDS: [["{dummy}"]]},
-                {"dummy": "dummyval"},
-                [["dummyval"]],
-            ),
-            (
-                "formatted2",
-                {const.FROM_COMMANDS: [["{dummy1}"], ["{dummy2}"], ["dummy3"]]},
-                {"dummy1": "dummyval1", "dummy2": "dummyval2"},
-                [["dummyval1"], ["dummyval2"], ["dummy3"]],
-            ),
-            (
-                "real",
-                reqs.REQUIREMENTS[reqs.REQ_SCHEME_SOURCE],
-                {"python": "dummy-python"},
-                [["dummy-python", "setup.py", "install"]],
-            ),
-        ]
-    )
-    def test_PV_RQ_060_command_requirements(self, name, requirements, kwargs, expected):
-        result = reqs.command_requirements(requirements, **kwargs)
-        self.assertListEqual(result, expected)
-
-    @parameterized.parameterized.expand(
-        [
-            ("none", {}, None, []),
-            (
-                "files_only",
-                {const.FROM_FILES: ["dummy1", "dummy2"]},
-                "dummy-package",
-                ["-r", "dummy1", "-r", "dummy2"],
-            ),
-            (
-                "package_only",
-                {const.FROM_PACKAGES: ["{basename}"]},
-                "dummy-package",
-                ["dummy-package"],
-            ),
-            (
-                "both",
-                {
-                    const.FROM_PACKAGES: ["{basename}"],
-                    const.FROM_FILES: ["dummy1", "dummy2"],
-                },
-                "dummy-package",
-                ["-r", "dummy1", "-r", "dummy2", "dummy-package"],
-            ),
-            (
-                "extra",
-                {
-                    const.FROM_COMMANDS: ["dummy-command"],
-                    const.FROM_PACKAGES: ["{basename}"],
-                },
-                "dummy-package",
-                ["dummy-package"],
-            ),
-            (
-                "real_plain",
-                reqs.REQUIREMENTS[reqs.REQ_SCHEME_PLAIN],
-                "dummy-package",
-                ["-r", "requirements.txt"],
-            ),
-            (
-                "real_package",
-                reqs.REQUIREMENTS[reqs.REQ_SCHEME_PACKAGE],
-                "dummy-package",
-                ["dummy-package"],
-            ),
-        ]
-    )
-    def test_PV_RQ_070_pip_requirements(self, name, requirements, basename, expected):
-        result = reqs.pip_requirements(requirements, basename)
-        self.assertListEqual(result, expected)
+    # TODO: Better testing of reqs.ReqScheme().fulfill()
 
     def test_PV_RQ_100_check_requirements_for_scheme_plain(self):
         # we expect to run from python_venv's project directory,
         # where 'requirements.txt' exists.
-        reqs.check_requirements_for_scheme(reqs.REQ_SCHEME_PLAIN)
-
-    def test_PV_RQ_101_check_requirements_for_scheme_invalid(self):
-        with self.assertRaises(KeyError):
-            reqs.check_requirements_for_scheme("yuck")
+        x = reqs.ReqScheme(reqs.REQ_SCHEME_PLAIN)
+        x.check()
 
     def test_PV_RQ_102_check_requirements_for_scheme_nonexistent(self):
-        reqs.REQUIREMENTS = {
-            "weird": {
-                const.FROM_FILES: ["weird-nonexistent.flummox"],
-            },
-        }
+        self._set_dummy_requirements()
+        reqs.REQUIREMENTS["weird"] = [
+            {const.FROM_FILES: ["weird-nonexistent.flummox"]},
+        ]
+        x = reqs.ReqScheme("weird")
         with self.assertRaises(exceptions.MissingRequirementsError):
-            reqs.check_requirements_for_scheme("weird")
+            x.check()
