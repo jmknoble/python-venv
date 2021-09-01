@@ -105,6 +105,7 @@ class BaseVirtualEnvironment(object):
     @property
     def requirements(self):
         """Get the requirements sources for this environment."""
+        # TODO: Is this necessary?
         if self._requirements is None:
             self._requirements = reqs.requirements_sources_for_scheme(self.req_scheme)
         return self._requirements
@@ -226,6 +227,12 @@ class VenvEnvironment(BaseVirtualEnvironment):
         """Create this environment."""
         self.progress(f"Creating {self.env_description}")
 
+        requirements = reqs.ReqScheme(
+            self.req_scheme,
+            basename=self.basename,
+            dry_run=self.dry_run,
+            env=self.os_environ,
+        )
         if run_preflight_checks:
             self.preflight_checks_for_create()
 
@@ -250,36 +257,16 @@ class VenvEnvironment(BaseVirtualEnvironment):
 
         self.progress(f"Installing {self.req_scheme} requirements")
 
-        pip_install_command = [env_python, "-m", "pip", "install"]
-        runcommand.run_command(
-            pip_install_command + ["--upgrade"] + reqs.requirements_for_venv(),
-            show_trace=True,
+        venv_requirements = reqs.ReqScheme(
+            reqs.REQ_SCHEME_VENV,
+            python=env_python,
             dry_run=self.dry_run,
             env=self.os_environ,
-            stdout=sys.stdout,
-            stderr=sys.stderr,
         )
+        venv_requirements.fulfill(upgrade=True)
 
-        for command in reqs.command_requirements(self.requirements, python=env_python):
-            runcommand.run_command(
-                command,
-                show_trace=True,
-                dry_run=self.dry_run,
-                env=self.os_environ,
-                stdout=sys.stdout,
-                stderr=sys.stderr,
-            )
-
-        if reqs.requirements_need_pip(self.requirements):
-            runcommand.run_command(
-                pip_install_command
-                + reqs.pip_requirements(self.requirements, self.basename),
-                show_trace=True,
-                dry_run=self.dry_run,
-                env=self.os_environ,
-                stdout=sys.stdout,
-                stderr=sys.stderr,
-            )
+        requirements.use_python(env_python)
+        requirements.fulfill()
 
         self.progress("Done.")
         if not self.dry_run:
