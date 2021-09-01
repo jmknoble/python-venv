@@ -200,6 +200,18 @@ class VenvEnvironment(BaseVirtualEnvironment):
     """Model a Python3 `venv`:py:mod: virtual environment."""
 
     @property
+    def requirements(self):
+        """Get the requirements sources for this environment."""
+        if self._requirements is None:
+            self._requirements = reqs.ReqScheme(
+                self.req_scheme,
+                basename=self.basename,
+                dry_run=self.dry_run,
+                env=self.os_environ,
+            )
+        return self._requirements
+
+    @property
     def env_name(self):
         """Get the name for this environment."""
         if self._env_name is None:
@@ -223,16 +235,15 @@ class VenvEnvironment(BaseVirtualEnvironment):
             )
         return False
 
+    def preflight_checks_for_create(self):
+        """Run preflight checks needed before creating this environment."""
+        if not self.ignore_preflight_checks:
+            self.requirements.check()
+
     def create(self, check_preexisting=True, run_preflight_checks=True, emit_done=True):
         """Create this environment."""
         self.progress(f"Creating {self.env_description}")
 
-        requirements = reqs.ReqScheme(
-            self.req_scheme,
-            basename=self.basename,
-            dry_run=self.dry_run,
-            env=self.os_environ,
-        )
         if run_preflight_checks:
             self.preflight_checks_for_create()
 
@@ -265,8 +276,8 @@ class VenvEnvironment(BaseVirtualEnvironment):
         )
         venv_requirements.fulfill(upgrade=True)
 
-        requirements.use_python(env_python)
-        requirements.fulfill()
+        self.requirements.use_python(env_python)
+        self.requirements.fulfill()
 
         self.progress("Done.")
         if not self.dry_run:

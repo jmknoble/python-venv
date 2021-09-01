@@ -275,7 +275,7 @@ class ReqScheme(object):
                 stderr=self.stderr,
             )
 
-    def check_requirements(self):
+    def check(self):
         """Check the requirements sources for missing things."""
         missing = []
         for entry in self.requirements:
