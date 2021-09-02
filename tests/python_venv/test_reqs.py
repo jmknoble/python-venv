@@ -28,6 +28,7 @@ class TestRequirements(unittest.TestCase):
     def test_PV_RQ_000_symbols_exist(self):
         _ = reqs.REQUIREMENTS_PLAIN
         _ = reqs.REQUIREMENTS_DEV
+        _ = reqs.REQUIREMENTS_DEVPLUS
         _ = reqs.REQUIREMENTS_TEST
         _ = reqs.REQUIREMENTS_FROZEN
         _ = reqs.REQUIREMENTS_BUILD
@@ -40,6 +41,7 @@ class TestRequirements(unittest.TestCase):
 
         _ = reqs.REQ_SCHEME_PLAIN
         _ = reqs.REQ_SCHEME_DEV
+        _ = reqs.REQ_SCHEME_DEVPLUS
         _ = reqs.REQ_SCHEME_FROZEN
         _ = reqs.REQ_SCHEME_PACKAGE
         _ = reqs.REQ_SCHEME_SOURCE
@@ -53,6 +55,7 @@ class TestRequirements(unittest.TestCase):
         [
             ("req_scheme_plain", reqs.REQ_SCHEME_PLAIN, "plain"),
             ("req_scheme_dev", reqs.REQ_SCHEME_DEV, "dev"),
+            ("req_scheme_devplus", reqs.REQ_SCHEME_DEVPLUS, "devplus"),
             ("req_scheme_frozen", reqs.REQ_SCHEME_FROZEN, "frozen"),
             ("req_scheme_package", reqs.REQ_SCHEME_PACKAGE, "package"),
             ("req_scheme_source", reqs.REQ_SCHEME_SOURCE, "source"),
@@ -102,6 +105,7 @@ class TestRequirements(unittest.TestCase):
         [
             ("plain", reqs.REQ_SCHEME_PLAIN),
             ("dev", reqs.REQ_SCHEME_DEV),
+            ("devplus", reqs.REQ_SCHEME_DEVPLUS),
         ]
     )
     def test_PV_RQ_012_instantiate_with_real(self, name, scheme):
@@ -136,6 +140,7 @@ class TestRequirements(unittest.TestCase):
         [
             ("plain", reqs.REQ_SCHEME_PLAIN, False),
             ("dev", reqs.REQ_SCHEME_DEV, True),
+            ("devplus", reqs.REQ_SCHEME_DEVPLUS, True),
         ]
     )
     def test_PV_RQ_030_is_dev(self, name, scheme, expected):

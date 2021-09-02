@@ -7,7 +7,8 @@ import sys
 from . import const, exceptions, fmt, runcommand
 
 REQUIREMENTS_PLAIN = "requirements.txt"
-REQUIREMENTS_DEV = os.path.join("dev", "requirements_dev.txt")
+REQUIREMENTS_DEV = "requirements_dev.txt"
+REQUIREMENTS_DEVPLUS = os.path.join("dev", "requirements_dev.txt")
 REQUIREMENTS_TEST = os.path.join("dev", "requirements_test.txt")
 REQUIREMENTS_FROZEN = "requirements_frozen.txt"
 REQUIREMENTS_BUILD = os.path.join("dev", "requirements_build.txt")
@@ -24,6 +25,7 @@ REQUIREMENTS_VENV = ["pip", "setuptools", "wheel"]
 
 REQ_SCHEME_PLAIN = "plain"
 REQ_SCHEME_DEV = "dev"
+REQ_SCHEME_DEVPLUS = "devplus"
 REQ_SCHEME_FROZEN = "frozen"
 REQ_SCHEME_PACKAGE = "package"
 REQ_SCHEME_SOURCE = "source"
@@ -32,11 +34,13 @@ REQ_SCHEME_VENV = "venv"
 
 DEV_REQ_SCHEMES = {
     REQ_SCHEME_DEV,
+    REQ_SCHEME_DEVPLUS,
 }
 
 ALL_REQ_SCHEMES = [
     REQ_SCHEME_PLAIN,
     REQ_SCHEME_DEV,
+    REQ_SCHEME_DEVPLUS,
     REQ_SCHEME_FROZEN,
     REQ_SCHEME_PACKAGE,
     REQ_SCHEME_SOURCE,
@@ -48,11 +52,14 @@ REQUIREMENTS = {
         {const.FROM_FILES: [REQUIREMENTS_PLAIN]},
     ],
     REQ_SCHEME_DEV: [
+        {const.FROM_FILES: [REQUIREMENTS_DEV]},
+    ],
+    REQ_SCHEME_DEVPLUS: [
         {
             const.FROM_FILES: [
                 REQUIREMENTS_PLAIN,
                 REQUIREMENTS_BUILD,
-                REQUIREMENTS_DEV,
+                REQUIREMENTS_DEVPLUS,
                 REQUIREMENTS_TEST,
             ],
         },

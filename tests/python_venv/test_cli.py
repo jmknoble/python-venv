@@ -20,7 +20,15 @@ def _generate_combinations(
     opt_types = ("short", "long", "abbrev_short", "abbrev_long")
     all_commands = ("create", "new", "remove", "rm", "replace")
     all_env_types = ("venv", "conda")
-    all_requirements = ("plain", "dev", "frozen", "package", "source", "wheel")
+    all_requirements = (
+        "plain",
+        "dev",
+        "devplus",
+        "frozen",
+        "package",
+        "source",
+        "wheel",
+    )
     basenames = (None, "dummy-basename")
     env_names = (None, "dummy-env")
     forces = (False, True)
@@ -59,6 +67,7 @@ def _generate_combinations(
             "conda": "-c",
             "plain": "-p",
             "dev": "-d",
+            "devplus": "-D",
             "frozen": "-z",
             "package": "-P",
             "source": "-s",
@@ -69,6 +78,7 @@ def _generate_combinations(
             "conda": "--conda",
             "plain": "--plain",
             "dev": "--dev",
+            "devplus": "--devplus",
             "frozen": "--frozen",
             "package": "--package",
             "source": "--source",
@@ -392,16 +402,19 @@ class TestCli(unittest.TestCase):
         [
             ("venv_plain", "venv", "plain", {}),
             ("venv_dev", "venv", "dev", {}),
+            ("venv_devplus", "venv", "devplus", {}),
             ("venv_frozen", "venv", "frozen", {}),
             ("conda_plain", "conda", "plain", {}),
             ("conda_dev", "conda", "dev", {}),
+            ("conda_devplus", "conda", "devplus", {}),
             ("conda_frozen", "conda", "frozen", {}),
         ]
     )
     def test_PV_CLI_300_create_missing_req(self, name, env_type, req_scheme, filespecs):
         req_files = {
             "plain": ["requirements.txt"],
-            "dev": [
+            "dev": ["requirements_dev.txt"],
+            "devplus": [
                 "requirements.txt",
                 os.path.join("dev", "requirements_build.txt"),
                 os.path.join("dev", "requirements_dev.txt"),

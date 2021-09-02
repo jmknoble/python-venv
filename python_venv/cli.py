@@ -51,8 +51,9 @@ VENV_CREATE_COMMANDS = [
 DESCRIPTION_MAIN = f"""
 Create or remove a Python virtual environment for the Python project in the
 current directory.  We expect a 'setup.py' to exist, along with requirements in
-'{reqs.REQUIREMENTS_PLAIN}', '{reqs.REQUIREMENTS_FROZEN}', '{reqs.REQUIREMENTS_DEV}',
-and '{reqs.REQUIREMENTS_TEST}'.
+'{reqs.REQUIREMENTS_PLAIN}' (and, for some more elaborate kinds of requirements, in
+'{reqs.REQUIREMENTS_FROZEN}', '{reqs.REQUIREMENTS_DEV}', '{reqs.REQUIREMENTS_DEVPLUS}',
+or '{reqs.REQUIREMENTS_TEST}').
 
 Venv virtual environments are created in '{const.VENV_DIR}'.
 
@@ -143,7 +144,18 @@ def _add_venv_arguments(argparser, req_scheme_required=False, **_kwargs):
         const=reqs.REQ_SCHEME_DEV,
         help=(
             f"Virtual environment is for development; uses "
-            f"'{reqs.REQUIREMENTS_PLAIN}', '{reqs.REQUIREMENTS_DEV}', and "
+            f"'{reqs.REQUIREMENTS_DEV}'"
+        ),
+    )
+    req_scheme_mutex_group.add_argument(
+        "-D",
+        f"--{reqs.REQ_SCHEME_DEVPLUS}",
+        action="store_const",
+        dest="req_scheme",
+        const=reqs.REQ_SCHEME_DEVPLUS,
+        help=(
+            f"Virtual environment is for development; uses "
+            f"'{reqs.REQUIREMENTS_PLAIN}', '{reqs.REQUIREMENTS_DEVPLUS}', and "
             f"'{reqs.REQUIREMENTS_TEST}'"
         ),
     )

@@ -423,6 +423,8 @@ class TestEnv_110_VenvCreate(unittest.TestCase):
             ("plain_env_name", reqs.REQ_SCHEME_PLAIN, False, None, ".dummy-venv"),
             ("dev_dry_run", reqs.REQ_SCHEME_DEV, True, None, None),
             ("dev", reqs.REQ_SCHEME_DEV, False, None, None),
+            ("devplus_dry_run", reqs.REQ_SCHEME_DEVPLUS, True, None, None),
+            ("devplus", reqs.REQ_SCHEME_DEVPLUS, False, None, None),
             ("frozen_dry_run", reqs.REQ_SCHEME_FROZEN, True, None, None),
             ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None),
             ("source_dry_run", reqs.REQ_SCHEME_SOURCE, True, None, None),
@@ -436,6 +438,7 @@ class TestEnv_110_VenvCreate(unittest.TestCase):
     def test_PV_ENV_VNV_110_create(self, name, req_scheme, dry_run, basename, env_name):
         filespecs = {
             "requirements.txt": "argcomplete",
+            "requirements_dev.txt": "argcomplete",
             "requirements_frozen.txt": "argcomplete == 1.12.3",
             os.path.join("dev", "requirements_build.txt"): "",
             os.path.join("dev", "requirements_dev.txt"): "",
@@ -497,6 +500,7 @@ class TestEnv_110_VenvCreate(unittest.TestCase):
         dirs = ["dummy-prefix"]
         filespecs = {
             "requirements.txt": "argcomplete",
+            "requirements_dev.txt": "argcomplete",
             "requirements_frozen.txt": "argcomplete == 1.12.3",
             os.path.join("dev", "requirements_build.txt"): "",
             os.path.join("dev", "requirements_dev.txt"): "",
@@ -531,6 +535,8 @@ class TestEnv_110_VenvCreate(unittest.TestCase):
             ("plain", reqs.REQ_SCHEME_PLAIN, False, None, None),
             ("dev_dry_run", reqs.REQ_SCHEME_DEV, True, None, None),
             ("dev", reqs.REQ_SCHEME_DEV, False, None, None),
+            ("devplus_dry_run", reqs.REQ_SCHEME_DEVPLUS, True, None, None),
+            ("devplus", reqs.REQ_SCHEME_DEVPLUS, False, None, None),
             ("frozen_dry_run", reqs.REQ_SCHEME_FROZEN, True, None, None),
             ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None),
         ]
@@ -589,6 +595,7 @@ class TestEnv_110_VenvCreate(unittest.TestCase):
     ):
         filespecs = {
             "requirements.txt": "argcomplete",
+            "requirements_dev.txt": "argcomplete",
             "requirements_frozen.txt": "argcomplete == 1.12.3",
             os.path.join("dev", "requirements_build.txt"): "",
             os.path.join("dev", "requirements_dev.txt"): "",
@@ -669,6 +676,8 @@ class TestEnv_120_VenvRemove(unittest.TestCase):
             ),
             ("dev_dry_run", reqs.REQ_SCHEME_DEV, True, None, None, None),
             ("dev", reqs.REQ_SCHEME_DEV, False, None, None, None),
+            ("devplus_dry_run", reqs.REQ_SCHEME_DEVPLUS, True, None, None, None),
+            ("devplus", reqs.REQ_SCHEME_DEVPLUS, False, None, None, None),
             ("frozen_dry_run", reqs.REQ_SCHEME_FROZEN, True, None, None, None),
             ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None, None),
             ("source_dry_run", reqs.REQ_SCHEME_SOURCE, True, None, None, None),
@@ -691,6 +700,7 @@ class TestEnv_120_VenvRemove(unittest.TestCase):
     ):
         filespecs = {
             "requirements.txt": "argcomplete",
+            "requirements_dev.txt": "argcomplete",
             "requirements_frozen.txt": "argcomplete == 1.12.3",
             os.path.join("dev", "requirements_build.txt"): "",
             os.path.join("dev", "requirements_dev.txt"): "",
@@ -773,6 +783,8 @@ class TestEnv_130_VenvReplace(unittest.TestCase):
             ),
             ("dev_dry_run", reqs.REQ_SCHEME_DEV, True, None, None, None),
             ("dev", reqs.REQ_SCHEME_DEV, False, None, None, None),
+            ("devplus_dry_run", reqs.REQ_SCHEME_DEVPLUS, True, None, None, None),
+            ("devplus", reqs.REQ_SCHEME_DEVPLUS, False, None, None, None),
             ("frozen_dry_run", reqs.REQ_SCHEME_FROZEN, True, None, None, None),
             ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None, None),
             ("source_dry_run", reqs.REQ_SCHEME_SOURCE, True, None, None, None),
@@ -795,6 +807,7 @@ class TestEnv_130_VenvReplace(unittest.TestCase):
     ):
         filespecs = {
             "requirements.txt": "argcomplete",
+            "requirements_dev.txt": "argcomplete",
             "requirements_frozen.txt": "argcomplete == 1.12.3",
             os.path.join("dev", "requirements_build.txt"): "",
             os.path.join("dev", "requirements_dev.txt"): "",
@@ -853,6 +866,8 @@ class TestEnv_130_VenvReplace(unittest.TestCase):
             ),
             ("dev_dry_run", reqs.REQ_SCHEME_DEV, True, None, None, None),
             ("dev", reqs.REQ_SCHEME_DEV, False, None, None, None),
+            ("devplus_dry_run", reqs.REQ_SCHEME_DEVPLUS, True, None, None, None),
+            ("devplus", reqs.REQ_SCHEME_DEVPLUS, False, None, None, None),
             ("frozen_dry_run", reqs.REQ_SCHEME_FROZEN, True, None, None, None),
             ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None, None),
             ("source_dry_run", reqs.REQ_SCHEME_SOURCE, True, None, None, None),
@@ -875,6 +890,7 @@ class TestEnv_130_VenvReplace(unittest.TestCase):
     ):
         filespecs = {
             "requirements.txt": "argcomplete",
+            "requirements_dev.txt": "argcomplete",
             "requirements_frozen.txt": "argcomplete == 1.12.3",
             os.path.join("dev", "requirements_build.txt"): "",
             os.path.join("dev", "requirements_dev.txt"): "",
@@ -992,6 +1008,7 @@ class TestEnv_200_CondaEnvironment(unittest.TestCase):
         [
             ("default", reqs.REQ_SCHEME_PLAIN, {}, "python-venv"),
             ("default_dev", reqs.REQ_SCHEME_DEV, {}, "python-venv-dev"),
+            ("default_devplus", reqs.REQ_SCHEME_DEVPLUS, {}, "python-venv-dev"),
             (
                 "basename",
                 reqs.REQ_SCHEME_PLAIN,
@@ -1001,6 +1018,12 @@ class TestEnv_200_CondaEnvironment(unittest.TestCase):
             (
                 "basename_dev",
                 reqs.REQ_SCHEME_DEV,
+                {"basename": "dummy-package"},
+                "dummy-package-dev",
+            ),
+            (
+                "basename_devplus",
+                reqs.REQ_SCHEME_DEVPLUS,
                 {"basename": "dummy-package"},
                 "dummy-package-dev",
             ),
@@ -1190,6 +1213,8 @@ class TestEnv_210_CondaCreate(unittest.TestCase):
             ("plain_env_name", reqs.REQ_SCHEME_PLAIN, False, None, "dummy-env"),
             ("dev_dry_run", reqs.REQ_SCHEME_DEV, True, None, None),
             ("dev", reqs.REQ_SCHEME_DEV, False, None, None),
+            ("devplus_dry_run", reqs.REQ_SCHEME_DEVPLUS, True, None, None),
+            ("devplus", reqs.REQ_SCHEME_DEVPLUS, False, None, None),
             ("frozen_dry_run", reqs.REQ_SCHEME_FROZEN, True, None, None),
             ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None),
             ("source_dry_run", reqs.REQ_SCHEME_SOURCE, True, None, None),
@@ -1206,6 +1231,7 @@ class TestEnv_210_CondaCreate(unittest.TestCase):
         dirs = [env_prefix]
         filespecs = {
             "requirements.txt": "argcomplete",
+            "requirements_dev.txt": "argcomplete",
             "requirements_frozen.txt": "argcomplete == 1.12.3",
             os.path.join("dev", "requirements_build.txt"): "",
             os.path.join("dev", "requirements_dev.txt"): "",
@@ -1241,6 +1267,8 @@ class TestEnv_210_CondaCreate(unittest.TestCase):
             ("plain", reqs.REQ_SCHEME_PLAIN, False, None, None),
             ("dev_dry_run", reqs.REQ_SCHEME_DEV, True, None, None),
             ("dev", reqs.REQ_SCHEME_DEV, False, None, None),
+            ("devplus_dry_run", reqs.REQ_SCHEME_DEVPLUS, True, None, None),
+            ("devplus", reqs.REQ_SCHEME_DEVPLUS, False, None, None),
             ("frozen_dry_run", reqs.REQ_SCHEME_FROZEN, True, None, None),
             ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None),
         ]
@@ -1309,6 +1337,7 @@ class TestEnv_210_CondaCreate(unittest.TestCase):
         dirs = [env_prefix]
         filespecs = {
             "requirements.txt": "argcomplete",
+            "requirements_dev.txt": "argcomplete",
             "requirements_frozen.txt": "argcomplete == 1.12.3",
             os.path.join("dev", "requirements_build.txt"): "",
             os.path.join("dev", "requirements_dev.txt"): "",
@@ -1383,6 +1412,8 @@ class TestEnv_220_CondaRemove(unittest.TestCase):
             ("plain_env_name", reqs.REQ_SCHEME_PLAIN, False, None, "dummy-env"),
             ("dev_dry_run", reqs.REQ_SCHEME_DEV, True, None, None),
             ("dev", reqs.REQ_SCHEME_DEV, False, None, None),
+            ("devplus_dry_run", reqs.REQ_SCHEME_DEVPLUS, True, None, None),
+            ("devplus", reqs.REQ_SCHEME_DEVPLUS, False, None, None),
             ("frozen_dry_run", reqs.REQ_SCHEME_FROZEN, True, None, None),
             ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None),
             ("source_dry_run", reqs.REQ_SCHEME_SOURCE, True, None, None),
@@ -1399,6 +1430,7 @@ class TestEnv_220_CondaRemove(unittest.TestCase):
         dirs = [env_prefix]
         filespecs = {
             "requirements.txt": "argcomplete",
+            "requirements_dev.txt": "argcomplete",
             "requirements_frozen.txt": "argcomplete == 1.12.3",
             os.path.join("dev", "requirements_build.txt"): "",
             os.path.join("dev", "requirements_dev.txt"): "",
@@ -1465,6 +1497,8 @@ class TestEnv_230_CondaReplace(unittest.TestCase):
             ("plain_env_name", reqs.REQ_SCHEME_PLAIN, False, None, "dummy-env"),
             ("dev_dry_run", reqs.REQ_SCHEME_DEV, True, None, None),
             ("dev", reqs.REQ_SCHEME_DEV, False, None, None),
+            ("devplus_dry_run", reqs.REQ_SCHEME_DEVPLUS, True, None, None),
+            ("devplus", reqs.REQ_SCHEME_DEVPLUS, False, None, None),
             ("frozen_dry_run", reqs.REQ_SCHEME_FROZEN, True, None, None),
             ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None),
             ("source_dry_run", reqs.REQ_SCHEME_SOURCE, True, None, None),
@@ -1483,6 +1517,7 @@ class TestEnv_230_CondaReplace(unittest.TestCase):
         dirs = [env_prefix]
         filespecs = {
             "requirements.txt": "argcomplete",
+            "requirements_dev.txt": "argcomplete",
             "requirements_frozen.txt": "argcomplete == 1.12.3",
             os.path.join("dev", "requirements_build.txt"): "",
             os.path.join("dev", "requirements_dev.txt"): "",
@@ -1523,6 +1558,8 @@ class TestEnv_230_CondaReplace(unittest.TestCase):
             ("plain_env_name", reqs.REQ_SCHEME_PLAIN, False, None, "dummy-env"),
             ("dev_dry_run", reqs.REQ_SCHEME_DEV, True, None, None),
             ("dev", reqs.REQ_SCHEME_DEV, False, None, None),
+            ("devplus_dry_run", reqs.REQ_SCHEME_DEVPLUS, True, None, None),
+            ("devplus", reqs.REQ_SCHEME_DEVPLUS, False, None, None),
             ("frozen_dry_run", reqs.REQ_SCHEME_FROZEN, True, None, None),
             ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None),
             ("source_dry_run", reqs.REQ_SCHEME_SOURCE, True, None, None),
@@ -1541,6 +1578,7 @@ class TestEnv_230_CondaReplace(unittest.TestCase):
         dirs = [env_prefix]
         filespecs = {
             "requirements.txt": "argcomplete",
+            "requirements_dev.txt": "argcomplete",
             "requirements_frozen.txt": "argcomplete == 1.12.3",
             os.path.join("dev", "requirements_build.txt"): "",
             os.path.join("dev", "requirements_dev.txt"): "",
