@@ -1,25 +1,33 @@
 """Model different sorts of requirements."""
 
 import os.path
+import re
 import sys
 
 from . import const, exceptions, fmt, runcommand
-
-REQUIREMENTS_VENV = ["pip", "setuptools", "wheel"]
 
 REQUIREMENTS_PLAIN = "requirements.txt"
 REQUIREMENTS_DEV = os.path.join("dev", "requirements_dev.txt")
 REQUIREMENTS_TEST = os.path.join("dev", "requirements_test.txt")
 REQUIREMENTS_FROZEN = "requirements_frozen.txt"
 REQUIREMENTS_BUILD = os.path.join("dev", "requirements_build.txt")
+
 REQUIREMENTS_PACKAGE = "{basename}"
+
 REQUIREMENTS_SOURCE = ["{python}", "setup.py", "install"]
+
+REQUIREMENTS_CLEAN = ["{python}", "setup.py", "clean", "--all"]
+REQUIREMENTS_BDIST_WHEEL = ["{python}", "setup.py", "bdist_wheel"]
+REQUIREMENTS_WHEELFILE = "{wheelfile}"
+
+REQUIREMENTS_VENV = ["pip", "setuptools", "wheel"]
 
 REQ_SCHEME_PLAIN = "plain"
 REQ_SCHEME_DEV = "dev"
 REQ_SCHEME_FROZEN = "frozen"
 REQ_SCHEME_PACKAGE = "package"
 REQ_SCHEME_SOURCE = "source"
+REQ_SCHEME_WHEEL = "wheel"
 REQ_SCHEME_VENV = "venv"
 
 DEV_REQ_SCHEMES = {
@@ -32,6 +40,7 @@ ALL_REQ_SCHEMES = [
     REQ_SCHEME_FROZEN,
     REQ_SCHEME_PACKAGE,
     REQ_SCHEME_SOURCE,
+    REQ_SCHEME_WHEEL,
 ]
 
 REQUIREMENTS = {
@@ -57,6 +66,11 @@ REQUIREMENTS = {
     REQ_SCHEME_SOURCE: [
         {const.FROM_COMMANDS: [REQUIREMENTS_SOURCE]},
     ],
+    REQ_SCHEME_WHEEL: [
+        {const.FROM_COMMANDS: [REQUIREMENTS_CLEAN]},
+        {const.FROM_BDIST_WHEEL: REQUIREMENTS_BDIST_WHEEL},
+        {const.FROM_PACKAGES: [REQUIREMENTS_WHEELFILE]},
+    ],
 }
 
 SPECIAL_REQUIREMENTS = {
@@ -64,6 +78,10 @@ SPECIAL_REQUIREMENTS = {
         {const.FROM_PACKAGES: REQUIREMENTS_VENV},
     ],
 }
+
+REGEX_BDIST_WHEEL_WHEELFILE = (
+    r"(?im)^creating '?(?P<wheelfile>.*\.whl)'? and adding .* to it"
+)
 
 
 class ReqScheme(object):
@@ -134,6 +152,8 @@ class ReqScheme(object):
         if self.formatter is None:
             self.formatter = fmt.Formatter(python=self.python, basename=self.basename)
 
+        self._handled_requirements_sources = set()
+
         self.requirements = self._get_requirements()
         self._set_pip_install_command()
 
@@ -181,29 +201,38 @@ class ReqScheme(object):
     def _get_requirements_commands(self, entry):
         return [self._format(x) for x in entry.get(const.FROM_COMMANDS, [])]
 
+    def _get_requirements_bdist_wheel(self, entry):
+        return self._format(entry.get(const.FROM_BDIST_WHEEL, []))
+
     def _collect_pip_arguments(self, entry):
         pip_arguments = self._pip_argify_files(self._get_requirements_files(entry))
         pip_arguments.extend(self._get_requirements_packages(entry))
+        self._handled_requirements_sources.add(const.FROM_FILES)
+        self._handled_requirements_sources.add(const.FROM_PACKAGES)
         return pip_arguments
 
     def _collect_commands(self, entry):
+        self._handled_requirements_sources.add(const.FROM_COMMANDS)
         return self._get_requirements_commands(entry)
+
+    def _collect_bdist_wheel(self, entry):
+        self._handled_requirements_sources.add(const.FROM_BDIST_WHEEL)
+        return self._get_requirements_bdist_wheel(entry)
 
     def fulfill(self, upgrade=False):
         """Fulfill the requirements specified in the scheme."""
         for entry in self.requirements:
             pip_arguments = self._collect_pip_arguments(entry)
             commands = self._collect_commands(entry)
+            bdist_wheel = self._collect_bdist_wheel(entry)
             if pip_arguments:
                 self._fulfill_pip_requirements(pip_arguments, upgrade=upgrade)
             if commands:
                 self._fulfill_commands(commands)
+            if bdist_wheel:
+                self._fulfill_bdist_wheel(bdist_wheel)
             for whence in entry:
-                if whence not in {
-                    const.FROM_FILES,
-                    const.FROM_PACKAGES,
-                    const.FROM_COMMANDS,
-                }:
+                if whence not in self._handled_requirements_sources:
                     raise IndexError(f"Unhandled requirement source: {whence}")
 
     def _fulfill_pip_requirements(self, pip_arguments, upgrade):
@@ -230,6 +259,24 @@ class ReqScheme(object):
                 stdout=self.stdout,
                 stderr=self.stderr,
             )
+
+    def _fulfill_bdist_wheel(self, bdist_wheel_command):
+        output = runcommand.run_command(
+            bdist_wheel_command,
+            show_trace=self.show_trace,
+            dry_run=self.dry_run,
+            return_output=True,
+            env=self.env,
+        )
+        if self.dry_run:
+            wheelfile = self._format("{name}-{version}-*.whl")
+            wheelfile = os.path.join("DISTDIR", wheelfile)
+        else:
+            match = re.search(REGEX_BDIST_WHEEL_WHEELFILE, output)
+            if not match:
+                raise RuntimeError(f"unable to detect wheelfile: {bdist_wheel_command}")
+            wheelfile = match.group("wheelfile")
+        self.formatter.add(wheelfile=wheelfile)
 
     def check(self):
         """Check the requirements sources for missing things."""

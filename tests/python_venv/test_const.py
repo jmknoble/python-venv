@@ -31,3 +31,4 @@ class TestConst(unittest.TestCase):
         _ = const.FROM_FILES
         _ = const.FROM_PACKAGES
         _ = const.FROM_COMMANDS
+        _ = const.FROM_BDIST_WHEEL

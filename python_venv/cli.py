@@ -173,6 +173,16 @@ def _add_venv_arguments(argparser, req_scheme_required=False, **_kwargs):
             command=" ".join(reqs.REQUIREMENTS_SOURCE).format(python=const.PYTHON)
         ),
     )
+    req_scheme_mutex_group.add_argument(
+        "-w",
+        f"--{reqs.REQ_SCHEME_WHEEL}",
+        action="store_const",
+        dest="req_scheme",
+        const=reqs.REQ_SCHEME_WHEEL,
+        help=("Virtual environment uses '{command}'").format(
+            command=" ".join(reqs.REQUIREMENTS_BDIST_WHEEL).format(python=const.PYTHON)
+        ),
+    )
 
     venv_group = argparser.add_argument_group(title="environment options")
     venv_mutex_group = venv_group.add_mutually_exclusive_group(required=True)

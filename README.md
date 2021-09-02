@@ -49,20 +49,20 @@ virtual environment.  Currently only installation from source is supported,
 **python-venv** can create the virtual environment and install itself for you.
 For a [venv][] environment:
 
-    python3 -m python_venv create -t venv -r source --dry-run
+    python3 -m python_venv create -t venv -r wheel --dry-run
 
 **python-venv** will say what it would do.  To actually do it, remove the
 `--dry-run` argument:
 
-    python3 -m python_venv create -t venv -r source
+    python3 -m python_venv create -t venv -r wheel
 
 For a [conda][] environment:
 
-    python3 -m python_venv create -t conda -r source --dry-run
+    python3 -m python_venv create -t conda -r wheel --dry-run
 
 and to actually do it:
 
-    python3 -m python_venv create -t conda -r source
+    python3 -m python_venv create -t conda -r wheel
 
 
 ## Invocation
@@ -84,8 +84,11 @@ and to actually do it:
 
         python3 -m python_venv
 
+Some of the above methods may differ for some command-line interpreters on
+Windows.
+
 For the remainder of this document, we will use `python-venv` to mean any of
-those methods.
+the above methods.
 
 
 ## Quick Start
@@ -138,6 +141,8 @@ what to install into a virtual environment:
   as a package to `pip install`.
 - **Source** -- using the Python project in the current directory as a thing
   to install via `python3 setup.py install`.
+- **Wheel** -- using the Python project in the current directory as a thing
+  to build via `python3 setup.py bdist_wheel` and then installing the result.
 - **Dev** -- using a combination of requirements files to install packages as
   a development environment for the Python project in the current directory.
 
@@ -149,6 +154,7 @@ These methods correspond roughly to the following:
 | frozen | `pip install -r requirements_frozen.txt` |
 | package | `pip install this-package-name` |
 | source | `python3 setup.py install` |
+| wheel | `python3 setup.py bdist_wheel; pip install WHEELFILE` |
 | dev | `pip install -r requirements.txt -r dev/requirements_build.txt -r dev/requirements_dev.txt -r dev/requirements_test.txt` |
 
 

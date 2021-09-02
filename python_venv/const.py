@@ -24,3 +24,4 @@ ENV_TYPES = [
 FROM_FILES = "files"
 FROM_PACKAGES = "packages"
 FROM_COMMANDS = "commands"
+FROM_BDIST_WHEEL = "bdist_wheel"

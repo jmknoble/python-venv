@@ -341,6 +341,35 @@ class TestRequirements(unittest.TestCase):
         result = x._collect_commands(entry)
         self.assertListEqual(result, expected)
 
+    @parameterized.parameterized.expand(
+        [
+            ("none", {}, []),
+            ("empty", {const.FROM_BDIST_WHEEL: []}, []),
+            (
+                "full",
+                {const.FROM_BDIST_WHEEL: ["dummy_command", "dummy_arg"]},
+                ["dummy_command", "dummy_arg"],
+            ),
+            (
+                "templated",
+                {
+                    const.FROM_BDIST_WHEEL: [
+                        "{python}",
+                        "-m",
+                        "dummy_module",
+                        "dummy_arg",
+                    ]
+                },
+                ["schmython", "-m", "dummy_module", "dummy_arg"],
+            ),
+        ]
+    )
+    def test_PV_RQ_82_collect_bdist_wheel(self, name, entry, expected):
+        self._set_dummy_requirements()
+        x = reqs.ReqScheme("dummy_req_scheme", python="schmython")
+        result = x._collect_bdist_wheel(entry)
+        self.assertListEqual(result, expected)
+
     def test_PV_RQ_100_check_requirements_for_scheme_plain(self):
         # we expect to run from python_venv's project directory,
         # where 'requirements.txt' exists.
