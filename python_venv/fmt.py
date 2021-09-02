@@ -6,7 +6,7 @@ class Formatter(object):
     Thin veneer over a dictionary and string formatting using its values.
 
     :Args:
-        **kwargs
+        kwargs
             (optional) Keyword arguments to initialize keys/values for
             formatting.
     """
