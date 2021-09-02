@@ -33,6 +33,7 @@ class TestRequirements(unittest.TestCase):
         _ = reqs.REQUIREMENTS_FROZEN
         _ = reqs.REQUIREMENTS_BUILD
         _ = reqs.REQUIREMENTS_PACKAGE
+        _ = reqs.REQUIREMENTS_PIP
         _ = reqs.REQUIREMENTS_SOURCE
         _ = reqs.REQUIREMENTS_CLEAN
         _ = reqs.REQUIREMENTS_BDIST_WHEEL
@@ -44,6 +45,7 @@ class TestRequirements(unittest.TestCase):
         _ = reqs.REQ_SCHEME_DEVPLUS
         _ = reqs.REQ_SCHEME_FROZEN
         _ = reqs.REQ_SCHEME_PACKAGE
+        _ = reqs.REQ_SCHEME_PIP
         _ = reqs.REQ_SCHEME_SOURCE
         _ = reqs.REQ_SCHEME_WHEEL
         _ = reqs.REQ_SCHEME_VENV
@@ -58,6 +60,7 @@ class TestRequirements(unittest.TestCase):
             ("req_scheme_devplus", reqs.REQ_SCHEME_DEVPLUS, "devplus"),
             ("req_scheme_frozen", reqs.REQ_SCHEME_FROZEN, "frozen"),
             ("req_scheme_package", reqs.REQ_SCHEME_PACKAGE, "package"),
+            ("req_scheme_pip", reqs.REQ_SCHEME_PIP, "pip"),
             ("req_scheme_source", reqs.REQ_SCHEME_SOURCE, "source"),
             ("req_scheme_wheel", reqs.REQ_SCHEME_WHEEL, "wheel"),
             ("req_scheme_venv", reqs.REQ_SCHEME_VENV, "venv"),
@@ -286,36 +289,90 @@ class TestRequirements(unittest.TestCase):
 
     @parameterized.parameterized.expand(
         [
-            ("none", {}, []),
-            ("empty", {const.FROM_FILES: []}, []),
+            ("none", {}, ["dummy_pip_arg", "dummy_pip_arg_two"], []),
+            (
+                "empty",
+                {const.FROM_PIP_ARGS: None},
+                ["dummy_pip_arg", "dummy_pip_arg_two"],
+                [],
+            ),
+            (
+                "false",
+                {const.FROM_PIP_ARGS: False},
+                ["dummy_pip_arg", "dummy_pip_arg_two"],
+                [],
+            ),
+            (
+                "true",
+                {const.FROM_PIP_ARGS: True},
+                ["dummy_pip_arg", "dummy_pip_arg_two"],
+                ["dummy_pip_arg", "dummy_pip_arg_two"],
+            ),
+            (
+                "real",
+                {const.FROM_PIP_ARGS: reqs.REQUIREMENTS_PIP},
+                ["dummy_pip_arg", "dummy_pip_arg_two"],
+                ["dummy_pip_arg", "dummy_pip_arg_two"],
+            ),
+        ]
+    )
+    def test_PV_RQ_73_get_requirements_pip_args(self, name, entry, pip_args, expected):
+        self._set_dummy_requirements()
+        x = reqs.ReqScheme("dummy_req_scheme", pip_args=pip_args, basename="dummy")
+        result = x._get_requirements_pip_args(entry)
+        self.assertListEqual(result, expected)
+
+    @parameterized.parameterized.expand(
+        [
+            ("none", {}, [], []),
+            ("empty", {const.FROM_FILES: []}, [], []),
             (
                 "files_only",
                 {const.FROM_FILES: ["dummy_one", "dummy_two"]},
+                [],
                 ["-r", "dummy_one", "-r", "dummy_two"],
             ),
             (
                 "packages_only",
                 {const.FROM_PACKAGES: ["dummy_package_1", "dummy_package_2"]},
+                [],
                 ["dummy_package_1", "dummy_package_2"],
             ),
             (
                 "packages_templated",
                 {const.FROM_PACKAGES: ["{basename}_package"]},
+                [],
                 ["dummy_package"],
+            ),
+            (
+                "pip_args_only",
+                {const.FROM_PIP_ARGS: True},
+                ["dummy_pip_arg_1", "dummy_pip_arg_2"],
+                ["dummy_pip_arg_1", "dummy_pip_arg_2"],
             ),
             (
                 "multi",
                 {
                     const.FROM_PACKAGES: ["dummy_package"],
                     const.FROM_FILES: ["dummy_one", "dummy_two"],
+                    const.FROM_PIP_ARGS: True,
                 },
-                ["-r", "dummy_one", "-r", "dummy_two", "dummy_package"],
+                ["dummy_pip_arg_1", "dummy_pip_arg_2"],
+                [
+                    "-r",
+                    "dummy_one",
+                    "-r",
+                    "dummy_two",
+                    "dummy_package",
+                    "dummy_pip_arg_1",
+                    "dummy_pip_arg_2",
+                ],
             ),
         ]
     )
-    def test_PV_RQ_80_collect_pip_arguments(self, name, entry, expected):
+    def test_PV_RQ_80_collect_pip_arguments(self, name, entry, pip_args, expected):
         self._set_dummy_requirements()
-        x = reqs.ReqScheme("dummy_req_scheme", basename="dummy")
+        x = reqs.ReqScheme("dummy_req_scheme", pip_args=pip_args, basename="dummy")
         result = x._collect_pip_arguments(entry)
         self.assertListEqual(result, expected)
 

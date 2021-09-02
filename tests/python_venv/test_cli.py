@@ -26,6 +26,7 @@ def _generate_combinations(
         "devplus",
         "frozen",
         "package",
+        "pip",
         "source",
         "wheel",
     )
@@ -69,7 +70,8 @@ def _generate_combinations(
             "dev": "-d",
             "devplus": "-D",
             "frozen": "-z",
-            "package": "-P",
+            "package": "--package",
+            "pip": "-P",
             "source": "-s",
             "wheel": "-w",
         },
@@ -81,6 +83,7 @@ def _generate_combinations(
             "devplus": "--devplus",
             "frozen": "--frozen",
             "package": "--package",
+            "pip": "--pip",
             "source": "--source",
             "wheel": "--wheel",
         },
@@ -162,6 +165,7 @@ def _generate_combinations(
             args.append(these_opts["dry_run"])
 
         add_kwargs = {
+            "pip_args": [],
             "basename": basename,
             "env_name": env_name,
             "dry_run": dry_run,

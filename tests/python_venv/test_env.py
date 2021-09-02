@@ -411,31 +411,36 @@ class TestEnv_110_VenvCreate(unittest.TestCase):
 
     @parameterized.parameterized.expand(
         [
-            ("plain_dry_run", reqs.REQ_SCHEME_PLAIN, True, None, None),
-            ("plain", reqs.REQ_SCHEME_PLAIN, False, None, None),
+            ("plain_dry_run", reqs.REQ_SCHEME_PLAIN, True, None, None, []),
+            ("plain", reqs.REQ_SCHEME_PLAIN, False, None, None, []),
             (
                 "plain_dry_run_env_name",
                 reqs.REQ_SCHEME_PLAIN,
                 True,
                 None,
                 ".dummy-venv",
+                [],
             ),
-            ("plain_env_name", reqs.REQ_SCHEME_PLAIN, False, None, ".dummy-venv"),
-            ("dev_dry_run", reqs.REQ_SCHEME_DEV, True, None, None),
-            ("dev", reqs.REQ_SCHEME_DEV, False, None, None),
-            ("devplus_dry_run", reqs.REQ_SCHEME_DEVPLUS, True, None, None),
-            ("devplus", reqs.REQ_SCHEME_DEVPLUS, False, None, None),
-            ("frozen_dry_run", reqs.REQ_SCHEME_FROZEN, True, None, None),
-            ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None),
-            ("source_dry_run", reqs.REQ_SCHEME_SOURCE, True, None, None),
-            ("source", reqs.REQ_SCHEME_SOURCE, False, None, None),
-            ("wheel_dry_run", reqs.REQ_SCHEME_WHEEL, True, None, None),
-            ("wheel", reqs.REQ_SCHEME_WHEEL, False, None, None),
-            ("package_dry_run", reqs.REQ_SCHEME_PACKAGE, True, "argcomplete", None),
-            ("package", reqs.REQ_SCHEME_PACKAGE, False, "argcomplete", None),
+            ("plain_env_name", reqs.REQ_SCHEME_PLAIN, False, None, ".dummy-venv", []),
+            ("dev_dry_run", reqs.REQ_SCHEME_DEV, True, None, None, []),
+            ("dev", reqs.REQ_SCHEME_DEV, False, None, None, []),
+            ("devplus_dry_run", reqs.REQ_SCHEME_DEVPLUS, True, None, None, []),
+            ("devplus", reqs.REQ_SCHEME_DEVPLUS, False, None, None, []),
+            ("frozen_dry_run", reqs.REQ_SCHEME_FROZEN, True, None, None, []),
+            ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None, []),
+            ("source_dry_run", reqs.REQ_SCHEME_SOURCE, True, None, None, []),
+            ("source", reqs.REQ_SCHEME_SOURCE, False, None, None, []),
+            ("wheel_dry_run", reqs.REQ_SCHEME_WHEEL, True, None, None, []),
+            ("wheel", reqs.REQ_SCHEME_WHEEL, False, None, None, []),
+            ("package_dry_run", reqs.REQ_SCHEME_PACKAGE, True, "argcomplete", None, []),
+            ("package", reqs.REQ_SCHEME_PACKAGE, False, "argcomplete", None, []),
+            ("pip_dry_run", reqs.REQ_SCHEME_PIP, True, None, None, ["argcomplete"]),
+            ("pip", reqs.REQ_SCHEME_PIP, False, None, None, ["argcomplete"]),
         ]
     )
-    def test_PV_ENV_VNV_110_create(self, name, req_scheme, dry_run, basename, env_name):
+    def test_PV_ENV_VNV_110_create(
+        self, name, req_scheme, dry_run, basename, env_name, pip_args
+    ):
         filespecs = {
             "requirements.txt": "argcomplete",
             "requirements_dev.txt": "argcomplete",
@@ -645,8 +650,8 @@ class TestEnv_120_VenvRemove(unittest.TestCase):
 
     @parameterized.parameterized.expand(
         [
-            ("plain_dry_run", reqs.REQ_SCHEME_PLAIN, True, None, None, None),
-            ("plain", reqs.REQ_SCHEME_PLAIN, False, None, None, None),
+            ("plain_dry_run", reqs.REQ_SCHEME_PLAIN, True, None, None, None, []),
+            ("plain", reqs.REQ_SCHEME_PLAIN, False, None, None, None, []),
             (
                 "plain_dry_run_env_name",
                 reqs.REQ_SCHEME_PLAIN,
@@ -654,10 +659,27 @@ class TestEnv_120_VenvRemove(unittest.TestCase):
                 None,
                 ".dummy-venv",
                 None,
+                [],
             ),
-            ("plain_env_name", reqs.REQ_SCHEME_PLAIN, False, None, ".dummy-venv", None),
-            ("prefix_dry_run", reqs.REQ_SCHEME_PLAIN, True, None, None, "dummy-prefix"),
-            ("prefix", reqs.REQ_SCHEME_PLAIN, False, None, None, "dummy-prefix"),
+            (
+                "plain_env_name",
+                reqs.REQ_SCHEME_PLAIN,
+                False,
+                None,
+                ".dummy-venv",
+                None,
+                [],
+            ),
+            (
+                "prefix_dry_run",
+                reqs.REQ_SCHEME_PLAIN,
+                True,
+                None,
+                None,
+                "dummy-prefix",
+                [],
+            ),
+            ("prefix", reqs.REQ_SCHEME_PLAIN, False, None, None, "dummy-prefix", []),
             (
                 "prefix_dry_run_env_name",
                 reqs.REQ_SCHEME_PLAIN,
@@ -665,6 +687,7 @@ class TestEnv_120_VenvRemove(unittest.TestCase):
                 None,
                 ".dummy-venv",
                 "dummy-prefix",
+                [],
             ),
             (
                 "prefix_env_name",
@@ -673,17 +696,18 @@ class TestEnv_120_VenvRemove(unittest.TestCase):
                 None,
                 ".dummy-venv",
                 "dummy-prefix",
+                [],
             ),
-            ("dev_dry_run", reqs.REQ_SCHEME_DEV, True, None, None, None),
-            ("dev", reqs.REQ_SCHEME_DEV, False, None, None, None),
-            ("devplus_dry_run", reqs.REQ_SCHEME_DEVPLUS, True, None, None, None),
-            ("devplus", reqs.REQ_SCHEME_DEVPLUS, False, None, None, None),
-            ("frozen_dry_run", reqs.REQ_SCHEME_FROZEN, True, None, None, None),
-            ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None, None),
-            ("source_dry_run", reqs.REQ_SCHEME_SOURCE, True, None, None, None),
-            ("source", reqs.REQ_SCHEME_SOURCE, False, None, None, None),
-            ("wheel_dry_run", reqs.REQ_SCHEME_WHEEL, True, None, None, None),
-            ("wheel", reqs.REQ_SCHEME_WHEEL, False, None, None, None),
+            ("dev_dry_run", reqs.REQ_SCHEME_DEV, True, None, None, None, []),
+            ("dev", reqs.REQ_SCHEME_DEV, False, None, None, None, []),
+            ("devplus_dry_run", reqs.REQ_SCHEME_DEVPLUS, True, None, None, None, []),
+            ("devplus", reqs.REQ_SCHEME_DEVPLUS, False, None, None, None, []),
+            ("frozen_dry_run", reqs.REQ_SCHEME_FROZEN, True, None, None, None, []),
+            ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None, None, []),
+            ("source_dry_run", reqs.REQ_SCHEME_SOURCE, True, None, None, None, []),
+            ("source", reqs.REQ_SCHEME_SOURCE, False, None, None, None, []),
+            ("wheel_dry_run", reqs.REQ_SCHEME_WHEEL, True, None, None, None, []),
+            ("wheel", reqs.REQ_SCHEME_WHEEL, False, None, None, None, []),
             (
                 "package_dry_run",
                 reqs.REQ_SCHEME_PACKAGE,
@@ -691,12 +715,23 @@ class TestEnv_120_VenvRemove(unittest.TestCase):
                 "argcomplete",
                 None,
                 None,
+                [],
             ),
-            ("package", reqs.REQ_SCHEME_PACKAGE, False, "argcomplete", None, None),
+            ("package", reqs.REQ_SCHEME_PACKAGE, False, "argcomplete", None, None, []),
+            (
+                "pip_dry_run",
+                reqs.REQ_SCHEME_PIP,
+                True,
+                None,
+                None,
+                None,
+                ["argcomplete"],
+            ),
+            ("pip", reqs.REQ_SCHEME_PIP, False, None, None, None, ["argcomplete"]),
         ]
     )
     def test_PV_ENV_VNV_210_remove(
-        self, name, req_scheme, dry_run, basename, env_name, env_prefix
+        self, name, req_scheme, dry_run, basename, env_name, env_prefix, pip_args
     ):
         filespecs = {
             "requirements.txt": "argcomplete",
@@ -709,6 +744,7 @@ class TestEnv_120_VenvRemove(unittest.TestCase):
         with ctx.project("dummy_package", filespecs=filespecs):
             x = env.VenvEnvironment(
                 req_scheme,
+                pip_args=pip_args,
                 basename=basename,
                 env_name=env_name,
                 env_prefix=env_prefix,
@@ -716,6 +752,7 @@ class TestEnv_120_VenvRemove(unittest.TestCase):
             )
             y = env.VenvEnvironment(
                 req_scheme,
+                pip_args=pip_args,
                 basename=basename,
                 env_name=env_name,
                 env_prefix=env_prefix,
@@ -752,8 +789,8 @@ class TestEnv_130_VenvReplace(unittest.TestCase):
 
     @parameterized.parameterized.expand(
         [
-            ("plain_dry_run", reqs.REQ_SCHEME_PLAIN, True, None, None, None),
-            ("plain", reqs.REQ_SCHEME_PLAIN, False, None, None, None),
+            ("plain_dry_run", reqs.REQ_SCHEME_PLAIN, True, None, None, None, []),
+            ("plain", reqs.REQ_SCHEME_PLAIN, False, None, None, None, []),
             (
                 "plain_dry_run_env_name",
                 reqs.REQ_SCHEME_PLAIN,
@@ -761,10 +798,27 @@ class TestEnv_130_VenvReplace(unittest.TestCase):
                 None,
                 ".dummy-venv",
                 None,
+                [],
             ),
-            ("plain_env_name", reqs.REQ_SCHEME_PLAIN, False, None, ".dummy-venv", None),
-            ("prefix_dry_run", reqs.REQ_SCHEME_PLAIN, True, None, None, "dummy-prefix"),
-            ("prefix", reqs.REQ_SCHEME_PLAIN, False, None, None, "dummy-prefix"),
+            (
+                "plain_env_name",
+                reqs.REQ_SCHEME_PLAIN,
+                False,
+                None,
+                ".dummy-venv",
+                None,
+                [],
+            ),
+            (
+                "prefix_dry_run",
+                reqs.REQ_SCHEME_PLAIN,
+                True,
+                None,
+                None,
+                "dummy-prefix",
+                [],
+            ),
+            ("prefix", reqs.REQ_SCHEME_PLAIN, False, None, None, "dummy-prefix", []),
             (
                 "prefix_dry_run_env_name",
                 reqs.REQ_SCHEME_PLAIN,
@@ -772,6 +826,7 @@ class TestEnv_130_VenvReplace(unittest.TestCase):
                 None,
                 ".dummy-venv",
                 "dummy-prefix",
+                [],
             ),
             (
                 "prefix_env_name",
@@ -780,17 +835,18 @@ class TestEnv_130_VenvReplace(unittest.TestCase):
                 None,
                 ".dummy-venv",
                 "dummy-prefix",
+                [],
             ),
-            ("dev_dry_run", reqs.REQ_SCHEME_DEV, True, None, None, None),
-            ("dev", reqs.REQ_SCHEME_DEV, False, None, None, None),
-            ("devplus_dry_run", reqs.REQ_SCHEME_DEVPLUS, True, None, None, None),
-            ("devplus", reqs.REQ_SCHEME_DEVPLUS, False, None, None, None),
-            ("frozen_dry_run", reqs.REQ_SCHEME_FROZEN, True, None, None, None),
-            ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None, None),
-            ("source_dry_run", reqs.REQ_SCHEME_SOURCE, True, None, None, None),
-            ("source", reqs.REQ_SCHEME_SOURCE, False, None, None, None),
-            ("wheel_dry_run", reqs.REQ_SCHEME_WHEEL, True, None, None, None),
-            ("wheel", reqs.REQ_SCHEME_WHEEL, False, None, None, None),
+            ("dev_dry_run", reqs.REQ_SCHEME_DEV, True, None, None, None, []),
+            ("dev", reqs.REQ_SCHEME_DEV, False, None, None, None, []),
+            ("devplus_dry_run", reqs.REQ_SCHEME_DEVPLUS, True, None, None, None, []),
+            ("devplus", reqs.REQ_SCHEME_DEVPLUS, False, None, None, None, []),
+            ("frozen_dry_run", reqs.REQ_SCHEME_FROZEN, True, None, None, None, []),
+            ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None, None, []),
+            ("source_dry_run", reqs.REQ_SCHEME_SOURCE, True, None, None, None, []),
+            ("source", reqs.REQ_SCHEME_SOURCE, False, None, None, None, []),
+            ("wheel_dry_run", reqs.REQ_SCHEME_WHEEL, True, None, None, None, []),
+            ("wheel", reqs.REQ_SCHEME_WHEEL, False, None, None, None, []),
             (
                 "package_dry_run",
                 reqs.REQ_SCHEME_PACKAGE,
@@ -798,12 +854,23 @@ class TestEnv_130_VenvReplace(unittest.TestCase):
                 "argcomplete",
                 None,
                 None,
+                [],
             ),
-            ("package", reqs.REQ_SCHEME_PACKAGE, False, "argcomplete", None, None),
+            ("package", reqs.REQ_SCHEME_PACKAGE, False, "argcomplete", None, None, []),
+            (
+                "pip_dry_run",
+                reqs.REQ_SCHEME_PIP,
+                True,
+                None,
+                None,
+                None,
+                ["argcomplete"],
+            ),
+            ("pip", reqs.REQ_SCHEME_PIP, False, None, None, None, ["argcomplete"]),
         ]
     )
     def test_PV_ENV_VNV_310_replace_nonexistent(
-        self, name, req_scheme, dry_run, basename, env_name, env_prefix
+        self, name, req_scheme, dry_run, basename, env_name, env_prefix, pip_args
     ):
         filespecs = {
             "requirements.txt": "argcomplete",
@@ -816,6 +883,7 @@ class TestEnv_130_VenvReplace(unittest.TestCase):
         with ctx.project("dummy_package", filespecs=filespecs):
             x = env.VenvEnvironment(
                 req_scheme,
+                pip_args=pip_args,
                 basename=basename,
                 env_name=env_name,
                 env_prefix=env_prefix,
@@ -835,8 +903,8 @@ class TestEnv_130_VenvReplace(unittest.TestCase):
 
     @parameterized.parameterized.expand(
         [
-            ("plain_dry_run", reqs.REQ_SCHEME_PLAIN, True, None, None, None),
-            ("plain", reqs.REQ_SCHEME_PLAIN, False, None, None, None),
+            ("plain_dry_run", reqs.REQ_SCHEME_PLAIN, True, None, None, None, []),
+            ("plain", reqs.REQ_SCHEME_PLAIN, False, None, None, None, []),
             (
                 "plain_dry_run_env_name",
                 reqs.REQ_SCHEME_PLAIN,
@@ -844,10 +912,27 @@ class TestEnv_130_VenvReplace(unittest.TestCase):
                 None,
                 ".dummy-venv",
                 None,
+                [],
             ),
-            ("plain_env_name", reqs.REQ_SCHEME_PLAIN, False, None, ".dummy-venv", None),
-            ("prefix_dry_run", reqs.REQ_SCHEME_PLAIN, True, None, None, "dummy-prefix"),
-            ("prefix", reqs.REQ_SCHEME_PLAIN, False, None, None, "dummy-prefix"),
+            (
+                "plain_env_name",
+                reqs.REQ_SCHEME_PLAIN,
+                False,
+                None,
+                ".dummy-venv",
+                None,
+                [],
+            ),
+            (
+                "prefix_dry_run",
+                reqs.REQ_SCHEME_PLAIN,
+                True,
+                None,
+                None,
+                "dummy-prefix",
+                [],
+            ),
+            ("prefix", reqs.REQ_SCHEME_PLAIN, False, None, None, "dummy-prefix", []),
             (
                 "prefix_dry_run_env_name",
                 reqs.REQ_SCHEME_PLAIN,
@@ -855,6 +940,7 @@ class TestEnv_130_VenvReplace(unittest.TestCase):
                 None,
                 ".dummy-venv",
                 "dummy-prefix",
+                [],
             ),
             (
                 "prefix_env_name",
@@ -863,17 +949,18 @@ class TestEnv_130_VenvReplace(unittest.TestCase):
                 None,
                 ".dummy-venv",
                 "dummy-prefix",
+                [],
             ),
-            ("dev_dry_run", reqs.REQ_SCHEME_DEV, True, None, None, None),
-            ("dev", reqs.REQ_SCHEME_DEV, False, None, None, None),
-            ("devplus_dry_run", reqs.REQ_SCHEME_DEVPLUS, True, None, None, None),
-            ("devplus", reqs.REQ_SCHEME_DEVPLUS, False, None, None, None),
-            ("frozen_dry_run", reqs.REQ_SCHEME_FROZEN, True, None, None, None),
-            ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None, None),
-            ("source_dry_run", reqs.REQ_SCHEME_SOURCE, True, None, None, None),
-            ("source", reqs.REQ_SCHEME_SOURCE, False, None, None, None),
-            ("wheel_dry_run", reqs.REQ_SCHEME_WHEEL, True, None, None, None),
-            ("wheel", reqs.REQ_SCHEME_WHEEL, False, None, None, None),
+            ("dev_dry_run", reqs.REQ_SCHEME_DEV, True, None, None, None, []),
+            ("dev", reqs.REQ_SCHEME_DEV, False, None, None, None, []),
+            ("devplus_dry_run", reqs.REQ_SCHEME_DEVPLUS, True, None, None, None, []),
+            ("devplus", reqs.REQ_SCHEME_DEVPLUS, False, None, None, None, []),
+            ("frozen_dry_run", reqs.REQ_SCHEME_FROZEN, True, None, None, None, []),
+            ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None, None, []),
+            ("source_dry_run", reqs.REQ_SCHEME_SOURCE, True, None, None, None, []),
+            ("source", reqs.REQ_SCHEME_SOURCE, False, None, None, None, []),
+            ("wheel_dry_run", reqs.REQ_SCHEME_WHEEL, True, None, None, None, []),
+            ("wheel", reqs.REQ_SCHEME_WHEEL, False, None, None, None, []),
             (
                 "package_dry_run",
                 reqs.REQ_SCHEME_PACKAGE,
@@ -881,12 +968,23 @@ class TestEnv_130_VenvReplace(unittest.TestCase):
                 "argcomplete",
                 None,
                 None,
+                [],
             ),
-            ("package", reqs.REQ_SCHEME_PACKAGE, False, "argcomplete", None, None),
+            ("package", reqs.REQ_SCHEME_PACKAGE, False, "argcomplete", None, None, []),
+            (
+                "pip_dry_run",
+                reqs.REQ_SCHEME_PIP,
+                True,
+                None,
+                None,
+                None,
+                ["argcomplete"],
+            ),
+            ("pip", reqs.REQ_SCHEME_PIP, False, None, None, None, ["argcomplete"]),
         ]
     )
     def test_PV_ENV_VNV_320_replace_existing(
-        self, name, req_scheme, dry_run, basename, env_name, env_prefix
+        self, name, req_scheme, dry_run, basename, env_name, env_prefix, pip_args
     ):
         filespecs = {
             "requirements.txt": "argcomplete",
@@ -899,6 +997,7 @@ class TestEnv_130_VenvReplace(unittest.TestCase):
         with ctx.project("dummy_package", filespecs=filespecs):
             x = env.VenvEnvironment(
                 req_scheme,
+                pip_args=pip_args,
                 basename=basename,
                 env_name=env_name,
                 env_prefix=env_prefix,
@@ -906,6 +1005,7 @@ class TestEnv_130_VenvReplace(unittest.TestCase):
             )
             y = env.VenvEnvironment(
                 req_scheme,
+                pip_args=pip_args,
                 basename=basename,
                 env_name=env_name,
                 env_prefix=env_prefix,
@@ -1201,32 +1301,37 @@ class TestEnv_210_CondaCreate(unittest.TestCase):
 
     @parameterized.parameterized.expand(
         [
-            ("plain_dry_run", reqs.REQ_SCHEME_PLAIN, True, None, None),
-            ("plain", reqs.REQ_SCHEME_PLAIN, False, None, None),
+            ("plain_dry_run", reqs.REQ_SCHEME_PLAIN, True, None, None, []),
+            ("plain", reqs.REQ_SCHEME_PLAIN, False, None, None, []),
             (
                 "plain_dry_run_env_name",
                 reqs.REQ_SCHEME_PLAIN,
                 True,
                 None,
                 "dummy-env",
+                [],
             ),
-            ("plain_env_name", reqs.REQ_SCHEME_PLAIN, False, None, "dummy-env"),
-            ("dev_dry_run", reqs.REQ_SCHEME_DEV, True, None, None),
-            ("dev", reqs.REQ_SCHEME_DEV, False, None, None),
-            ("devplus_dry_run", reqs.REQ_SCHEME_DEVPLUS, True, None, None),
-            ("devplus", reqs.REQ_SCHEME_DEVPLUS, False, None, None),
-            ("frozen_dry_run", reqs.REQ_SCHEME_FROZEN, True, None, None),
-            ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None),
-            ("source_dry_run", reqs.REQ_SCHEME_SOURCE, True, None, None),
-            ("source", reqs.REQ_SCHEME_SOURCE, False, None, None),
-            ("wheel_dry_run", reqs.REQ_SCHEME_WHEEL, True, None, None),
-            ("wheel", reqs.REQ_SCHEME_WHEEL, False, None, None),
-            ("package_dry_run", reqs.REQ_SCHEME_PACKAGE, True, "argcomplete", None),
-            ("package", reqs.REQ_SCHEME_PACKAGE, False, "argcomplete", None),
+            ("plain_env_name", reqs.REQ_SCHEME_PLAIN, False, None, "dummy-env", []),
+            ("dev_dry_run", reqs.REQ_SCHEME_DEV, True, None, None, []),
+            ("dev", reqs.REQ_SCHEME_DEV, False, None, None, []),
+            ("devplus_dry_run", reqs.REQ_SCHEME_DEVPLUS, True, None, None, []),
+            ("devplus", reqs.REQ_SCHEME_DEVPLUS, False, None, None, []),
+            ("frozen_dry_run", reqs.REQ_SCHEME_FROZEN, True, None, None, []),
+            ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None, []),
+            ("source_dry_run", reqs.REQ_SCHEME_SOURCE, True, None, None, []),
+            ("source", reqs.REQ_SCHEME_SOURCE, False, None, None, []),
+            ("wheel_dry_run", reqs.REQ_SCHEME_WHEEL, True, None, None, []),
+            ("wheel", reqs.REQ_SCHEME_WHEEL, False, None, None, []),
+            ("package_dry_run", reqs.REQ_SCHEME_PACKAGE, True, "argcomplete", None, []),
+            ("package", reqs.REQ_SCHEME_PACKAGE, False, "argcomplete", None, []),
+            ("pip_dry_run", reqs.REQ_SCHEME_PIP, True, None, None, ["argcomplete"]),
+            ("pip", reqs.REQ_SCHEME_PIP, False, None, None, ["argcomplete"]),
         ]
     )
     @unittest.skipUnless(_should_run_long_tests(), SKIP_LONG_RUNNING_MESSAGE)
-    def test_PV_ENV_CDA_110_create(self, name, req_scheme, dry_run, basename, env_name):
+    def test_PV_ENV_CDA_110_create(
+        self, name, req_scheme, dry_run, basename, env_name, pip_args
+    ):
         env_prefix = ".conda-env"  # Must use env_prefix to avoid polluting conda envs
         dirs = [env_prefix]
         filespecs = {
@@ -1240,6 +1345,7 @@ class TestEnv_210_CondaCreate(unittest.TestCase):
         with ctx.project("dummy_package", dirs=dirs, filespecs=filespecs):
             x = env.CondaEnvironment(
                 req_scheme,
+                pip_args=pip_args,
                 basename=basename,
                 env_name=env_name,
                 env_prefix=env_prefix,
@@ -1400,32 +1506,37 @@ class TestEnv_220_CondaRemove(unittest.TestCase):
 
     @parameterized.parameterized.expand(
         [
-            ("plain_dry_run", reqs.REQ_SCHEME_PLAIN, True, None, None),
-            ("plain", reqs.REQ_SCHEME_PLAIN, False, None, None),
+            ("plain_dry_run", reqs.REQ_SCHEME_PLAIN, True, None, None, []),
+            ("plain", reqs.REQ_SCHEME_PLAIN, False, None, None, []),
             (
                 "plain_dry_run_env_name",
                 reqs.REQ_SCHEME_PLAIN,
                 True,
                 None,
                 "dummy-env",
+                [],
             ),
-            ("plain_env_name", reqs.REQ_SCHEME_PLAIN, False, None, "dummy-env"),
-            ("dev_dry_run", reqs.REQ_SCHEME_DEV, True, None, None),
-            ("dev", reqs.REQ_SCHEME_DEV, False, None, None),
-            ("devplus_dry_run", reqs.REQ_SCHEME_DEVPLUS, True, None, None),
-            ("devplus", reqs.REQ_SCHEME_DEVPLUS, False, None, None),
-            ("frozen_dry_run", reqs.REQ_SCHEME_FROZEN, True, None, None),
-            ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None),
-            ("source_dry_run", reqs.REQ_SCHEME_SOURCE, True, None, None),
-            ("source", reqs.REQ_SCHEME_SOURCE, False, None, None),
-            ("wheel_dry_run", reqs.REQ_SCHEME_WHEEL, True, None, None),
-            ("wheel", reqs.REQ_SCHEME_WHEEL, False, None, None),
-            ("package_dry_run", reqs.REQ_SCHEME_PACKAGE, True, "argcomplete", None),
-            ("package", reqs.REQ_SCHEME_PACKAGE, False, "argcomplete", None),
+            ("plain_env_name", reqs.REQ_SCHEME_PLAIN, False, None, "dummy-env", []),
+            ("dev_dry_run", reqs.REQ_SCHEME_DEV, True, None, None, []),
+            ("dev", reqs.REQ_SCHEME_DEV, False, None, None, []),
+            ("devplus_dry_run", reqs.REQ_SCHEME_DEVPLUS, True, None, None, []),
+            ("devplus", reqs.REQ_SCHEME_DEVPLUS, False, None, None, []),
+            ("frozen_dry_run", reqs.REQ_SCHEME_FROZEN, True, None, None, []),
+            ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None, []),
+            ("source_dry_run", reqs.REQ_SCHEME_SOURCE, True, None, None, []),
+            ("source", reqs.REQ_SCHEME_SOURCE, False, None, None, []),
+            ("wheel_dry_run", reqs.REQ_SCHEME_WHEEL, True, None, None, []),
+            ("wheel", reqs.REQ_SCHEME_WHEEL, False, None, None, []),
+            ("package_dry_run", reqs.REQ_SCHEME_PACKAGE, True, "argcomplete", None, []),
+            ("package", reqs.REQ_SCHEME_PACKAGE, False, "argcomplete", None, []),
+            ("pip_dry_run", reqs.REQ_SCHEME_PIP, True, None, None, ["argcomplete"]),
+            ("pip", reqs.REQ_SCHEME_PIP, False, None, None, ["argcomplete"]),
         ]
     )
     @unittest.skipUnless(_should_run_long_tests(), SKIP_LONG_RUNNING_MESSAGE)
-    def test_PV_ENV_CDA_210_remove(self, name, req_scheme, dry_run, basename, env_name):
+    def test_PV_ENV_CDA_210_remove(
+        self, name, req_scheme, dry_run, basename, env_name, pip_args
+    ):
         env_prefix = ".conda-env"
         dirs = [env_prefix]
         filespecs = {
@@ -1439,6 +1550,7 @@ class TestEnv_220_CondaRemove(unittest.TestCase):
         with ctx.project("dummy_package", dirs=dirs, filespecs=filespecs):
             x = env.CondaEnvironment(
                 req_scheme,
+                pip_args=pip_args,
                 basename=basename,
                 env_name=env_name,
                 env_prefix=env_prefix,
@@ -1447,6 +1559,7 @@ class TestEnv_220_CondaRemove(unittest.TestCase):
             )
             y = env.CondaEnvironment(
                 req_scheme,
+                pip_args=pip_args,
                 basename=basename,
                 env_name=env_name,
                 env_prefix=env_prefix,
@@ -1485,33 +1598,36 @@ class TestEnv_230_CondaReplace(unittest.TestCase):
 
     @parameterized.parameterized.expand(
         [
-            ("plain_dry_run", reqs.REQ_SCHEME_PLAIN, True, None, None),
-            ("plain", reqs.REQ_SCHEME_PLAIN, False, None, None),
+            ("plain_dry_run", reqs.REQ_SCHEME_PLAIN, True, None, None, []),
+            ("plain", reqs.REQ_SCHEME_PLAIN, False, None, None, []),
             (
                 "plain_dry_run_env_name",
                 reqs.REQ_SCHEME_PLAIN,
                 True,
                 None,
                 "dummy-env",
+                [],
             ),
-            ("plain_env_name", reqs.REQ_SCHEME_PLAIN, False, None, "dummy-env"),
-            ("dev_dry_run", reqs.REQ_SCHEME_DEV, True, None, None),
-            ("dev", reqs.REQ_SCHEME_DEV, False, None, None),
-            ("devplus_dry_run", reqs.REQ_SCHEME_DEVPLUS, True, None, None),
-            ("devplus", reqs.REQ_SCHEME_DEVPLUS, False, None, None),
-            ("frozen_dry_run", reqs.REQ_SCHEME_FROZEN, True, None, None),
-            ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None),
-            ("source_dry_run", reqs.REQ_SCHEME_SOURCE, True, None, None),
-            ("source", reqs.REQ_SCHEME_SOURCE, False, None, None),
-            ("wheel_dry_run", reqs.REQ_SCHEME_WHEEL, True, None, None),
-            ("wheel", reqs.REQ_SCHEME_WHEEL, False, None, None),
-            ("package_dry_run", reqs.REQ_SCHEME_PACKAGE, True, "argcomplete", None),
-            ("package", reqs.REQ_SCHEME_PACKAGE, False, "argcomplete", None),
+            ("plain_env_name", reqs.REQ_SCHEME_PLAIN, False, None, "dummy-env", []),
+            ("dev_dry_run", reqs.REQ_SCHEME_DEV, True, None, None, []),
+            ("dev", reqs.REQ_SCHEME_DEV, False, None, None, []),
+            ("devplus_dry_run", reqs.REQ_SCHEME_DEVPLUS, True, None, None, []),
+            ("devplus", reqs.REQ_SCHEME_DEVPLUS, False, None, None, []),
+            ("frozen_dry_run", reqs.REQ_SCHEME_FROZEN, True, None, None, []),
+            ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None, []),
+            ("source_dry_run", reqs.REQ_SCHEME_SOURCE, True, None, None, []),
+            ("source", reqs.REQ_SCHEME_SOURCE, False, None, None, []),
+            ("wheel_dry_run", reqs.REQ_SCHEME_WHEEL, True, None, None, []),
+            ("wheel", reqs.REQ_SCHEME_WHEEL, False, None, None, []),
+            ("package_dry_run", reqs.REQ_SCHEME_PACKAGE, True, "argcomplete", None, []),
+            ("package", reqs.REQ_SCHEME_PACKAGE, False, "argcomplete", None, []),
+            ("pip_dry_run", reqs.REQ_SCHEME_PIP, True, None, None, ["argcomplete"]),
+            ("pip", reqs.REQ_SCHEME_PIP, False, None, None, ["argcomplete"]),
         ]
     )
     @unittest.skipUnless(_should_run_long_tests(), SKIP_LONG_RUNNING_MESSAGE)
     def test_PV_ENV_CDA_310_replace_nonexistent(
-        self, name, req_scheme, dry_run, basename, env_name
+        self, name, req_scheme, dry_run, basename, env_name, pip_args
     ):
         env_prefix = ".conda-env"
         dirs = [env_prefix]
@@ -1526,6 +1642,7 @@ class TestEnv_230_CondaReplace(unittest.TestCase):
         with ctx.project("dummy_package", dirs=dirs, filespecs=filespecs):
             x = env.CondaEnvironment(
                 req_scheme,
+                pip_args=pip_args,
                 basename=basename,
                 env_name=env_name,
                 env_prefix=env_prefix,
@@ -1546,33 +1663,36 @@ class TestEnv_230_CondaReplace(unittest.TestCase):
 
     @parameterized.parameterized.expand(
         [
-            ("plain_dry_run", reqs.REQ_SCHEME_PLAIN, True, None, None),
-            ("plain", reqs.REQ_SCHEME_PLAIN, False, None, None),
+            ("plain_dry_run", reqs.REQ_SCHEME_PLAIN, True, None, None, []),
+            ("plain", reqs.REQ_SCHEME_PLAIN, False, None, None, []),
             (
                 "plain_dry_run_env_name",
                 reqs.REQ_SCHEME_PLAIN,
                 True,
                 None,
                 "dummy-env",
+                [],
             ),
-            ("plain_env_name", reqs.REQ_SCHEME_PLAIN, False, None, "dummy-env"),
-            ("dev_dry_run", reqs.REQ_SCHEME_DEV, True, None, None),
-            ("dev", reqs.REQ_SCHEME_DEV, False, None, None),
-            ("devplus_dry_run", reqs.REQ_SCHEME_DEVPLUS, True, None, None),
-            ("devplus", reqs.REQ_SCHEME_DEVPLUS, False, None, None),
-            ("frozen_dry_run", reqs.REQ_SCHEME_FROZEN, True, None, None),
-            ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None),
-            ("source_dry_run", reqs.REQ_SCHEME_SOURCE, True, None, None),
-            ("source", reqs.REQ_SCHEME_SOURCE, False, None, None),
-            ("wheel_dry_run", reqs.REQ_SCHEME_WHEEL, True, None, None),
-            ("wheel", reqs.REQ_SCHEME_WHEEL, False, None, None),
-            ("package_dry_run", reqs.REQ_SCHEME_PACKAGE, True, "argcomplete", None),
-            ("package", reqs.REQ_SCHEME_PACKAGE, False, "argcomplete", None),
+            ("plain_env_name", reqs.REQ_SCHEME_PLAIN, False, None, "dummy-env", []),
+            ("dev_dry_run", reqs.REQ_SCHEME_DEV, True, None, None, []),
+            ("dev", reqs.REQ_SCHEME_DEV, False, None, None, []),
+            ("devplus_dry_run", reqs.REQ_SCHEME_DEVPLUS, True, None, None, []),
+            ("devplus", reqs.REQ_SCHEME_DEVPLUS, False, None, None, []),
+            ("frozen_dry_run", reqs.REQ_SCHEME_FROZEN, True, None, None, []),
+            ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None, []),
+            ("source_dry_run", reqs.REQ_SCHEME_SOURCE, True, None, None, []),
+            ("source", reqs.REQ_SCHEME_SOURCE, False, None, None, []),
+            ("wheel_dry_run", reqs.REQ_SCHEME_WHEEL, True, None, None, []),
+            ("wheel", reqs.REQ_SCHEME_WHEEL, False, None, None, []),
+            ("package_dry_run", reqs.REQ_SCHEME_PACKAGE, True, "argcomplete", None, []),
+            ("package", reqs.REQ_SCHEME_PACKAGE, False, "argcomplete", None, []),
+            ("pip_dry_run", reqs.REQ_SCHEME_PIP, True, None, None, ["argcomplete"]),
+            ("pip", reqs.REQ_SCHEME_PIP, False, None, None, ["argcomplete"]),
         ]
     )
     @unittest.skipUnless(_should_run_long_tests(), SKIP_LONG_RUNNING_MESSAGE)
     def test_PV_ENV_CDA_320_replace_existing(
-        self, name, req_scheme, dry_run, basename, env_name
+        self, name, req_scheme, dry_run, basename, env_name, pip_args
     ):
         env_prefix = ".conda-env"
         dirs = [env_prefix]
@@ -1587,6 +1707,7 @@ class TestEnv_230_CondaReplace(unittest.TestCase):
         with ctx.project("dummy_package", dirs=dirs, filespecs=filespecs):
             x = env.CondaEnvironment(
                 req_scheme,
+                pip_args=pip_args,
                 basename=basename,
                 env_name=env_name,
                 env_prefix=env_prefix,
@@ -1595,6 +1716,7 @@ class TestEnv_230_CondaReplace(unittest.TestCase):
             )
             y = env.CondaEnvironment(
                 req_scheme,
+                pip_args=pip_args,
                 basename=basename,
                 env_name=env_name,
                 env_prefix=env_prefix,

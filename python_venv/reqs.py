@@ -13,6 +13,7 @@ REQUIREMENTS_TEST = os.path.join("dev", "requirements_test.txt")
 REQUIREMENTS_FROZEN = "requirements_frozen.txt"
 REQUIREMENTS_BUILD = os.path.join("dev", "requirements_build.txt")
 
+REQUIREMENTS_PIP = True
 REQUIREMENTS_PACKAGE = "{basename}"
 
 REQUIREMENTS_SOURCE = ["{python}", "setup.py", "install"]
@@ -28,6 +29,7 @@ REQ_SCHEME_DEV = "dev"
 REQ_SCHEME_DEVPLUS = "devplus"
 REQ_SCHEME_FROZEN = "frozen"
 REQ_SCHEME_PACKAGE = "package"
+REQ_SCHEME_PIP = "pip"
 REQ_SCHEME_SOURCE = "source"
 REQ_SCHEME_WHEEL = "wheel"
 REQ_SCHEME_VENV = "venv"
@@ -43,6 +45,7 @@ ALL_REQ_SCHEMES = [
     REQ_SCHEME_DEVPLUS,
     REQ_SCHEME_FROZEN,
     REQ_SCHEME_PACKAGE,
+    REQ_SCHEME_PIP,
     REQ_SCHEME_SOURCE,
     REQ_SCHEME_WHEEL,
 ]
@@ -69,6 +72,9 @@ REQUIREMENTS = {
     ],
     REQ_SCHEME_PACKAGE: [
         {const.FROM_PACKAGES: [REQUIREMENTS_PACKAGE]},
+    ],
+    REQ_SCHEME_PIP: [
+        {const.FROM_PIP_ARGS: REQUIREMENTS_PIP},
     ],
     REQ_SCHEME_SOURCE: [
         {const.FROM_COMMANDS: [REQUIREMENTS_SOURCE]},
@@ -98,6 +104,10 @@ class ReqScheme(object):
     :Args:
         scheme
             The name of the requirements scheme to use; one of ``REQ_SCHEME_*``
+
+        pip_args
+            (optional) Requirement specifications to pass to ``pip`` if
+            `scheme` is `REQ_SCHEME_PIP`:py:const:.
 
         python
             (optional) The path to the Python interpreter to use for these
@@ -137,6 +147,7 @@ class ReqScheme(object):
     def __init__(
         self,
         scheme,
+        pip_args=None,
         python=None,
         basename=None,
         formatter=None,
@@ -147,6 +158,7 @@ class ReqScheme(object):
         stderr=None,
     ):
         self.scheme = scheme
+        self.pip_args = [] if pip_args is None else pip_args
         self.python = python
         self.basename = basename
         self.formatter = formatter
@@ -205,6 +217,11 @@ class ReqScheme(object):
     def _get_requirements_packages(self, entry):
         return self._format(entry.get(const.FROM_PACKAGES, []))
 
+    def _get_requirements_pip_args(self, entry):
+        if entry.get(const.FROM_PIP_ARGS, False):
+            return self._format(self.pip_args)
+        return []
+
     def _get_requirements_commands(self, entry):
         return [self._format(x) for x in entry.get(const.FROM_COMMANDS, [])]
 
@@ -214,8 +231,10 @@ class ReqScheme(object):
     def _collect_pip_arguments(self, entry):
         pip_arguments = self._pip_argify_files(self._get_requirements_files(entry))
         pip_arguments.extend(self._get_requirements_packages(entry))
+        pip_arguments.extend(self._get_requirements_pip_args(entry))
         self._handled_requirements_sources.add(const.FROM_FILES)
         self._handled_requirements_sources.add(const.FROM_PACKAGES)
+        self._handled_requirements_sources.add(const.FROM_PIP_ARGS)
         return pip_arguments
 
     def _collect_commands(self, entry):

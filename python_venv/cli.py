@@ -169,6 +169,16 @@ def _add_venv_arguments(argparser, req_scheme_required=False, **_kwargs):
     )
     req_scheme_mutex_group.add_argument(
         "-P",
+        f"--{reqs.REQ_SCHEME_PIP}",
+        action="store_const",
+        dest="req_scheme",
+        const=reqs.REQ_SCHEME_PIP,
+        help=(
+            "Virtual environment uses pip requirements specified as arguments "
+            "on command line"
+        ),
+    )
+    req_scheme_mutex_group.add_argument(
         f"--{reqs.REQ_SCHEME_PACKAGE}",
         action="store_const",
         dest="req_scheme",
@@ -233,6 +243,13 @@ def _add_venv_arguments(argparser, req_scheme_required=False, **_kwargs):
             "(default: '.venv' for venv environments, or "
             "inferred from BASENAME for conda environments)"
         ),
+    )
+
+    argparser.add_argument(
+        "other_args",
+        metavar="...",
+        nargs=argparse.REMAINDER,
+        help="Requirements to pass to 'pip' when using '--pip'",
     )
 
     return argparser
@@ -309,6 +326,7 @@ def _get_virtual_env(args):
         "python": const.PYTHON,
         "basename": args.basename,
         "env_name": args.env_name,
+        "pip_args": args.other_args,
     }
     try:
         if args.python_version is not None:
@@ -415,6 +433,18 @@ def main(*argv):
         sys.exit(const.STATUS_HELP)  # Same behavior as argparse usage messages
 
     try:
+        if (
+            hasattr(args, "req_scheme")
+            and hasattr(args, "other_args")
+            and (args.req_scheme != reqs.REQ_SCHEME_PIP)
+            and (len(args.other_args) > 0)
+        ):
+            raise RuntimeError(
+                f"{args.other_args}: additional arguments do not make "
+                f"sense with '-r {args.req_scheme}' (consider using "
+                f"'-r {reqs.REQ_SCHEME_PIP}'?)"
+            )
+
         try:
             if args.func is not None:
                 return args.func(prog, args)

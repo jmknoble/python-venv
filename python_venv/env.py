@@ -20,6 +20,10 @@ class BaseVirtualEnvironment(object):
             The requirements scheme from `~python_venv.reqs`:py:mod: to use for
             this environment.
 
+        pip_args
+            (optional) Requirement specifications to pass to the ``pip``
+            command if `req_scheme` is ``pip``.
+
         basename
             (optional) The basename of the Python project in the current
             directory (default: inferred).
@@ -57,6 +61,7 @@ class BaseVirtualEnvironment(object):
     def __init__(
         self,
         req_scheme,
+        pip_args=None,
         basename=None,
         env_name=None,
         env_prefix=None,
@@ -69,6 +74,7 @@ class BaseVirtualEnvironment(object):
     ):
         self.req_scheme = req_scheme
 
+        self.pip_args = [] if pip_args is None else pip_args
         self._basename = basename
         self._env_name = env_name
         self._env_prefix = env_prefix
@@ -110,6 +116,7 @@ class BaseVirtualEnvironment(object):
         if self._requirements is None:
             self._requirements = reqs.ReqScheme(
                 self.req_scheme,
+                pip_args=self.pip_args,
                 basename=self.basename,
                 formatter=self.formatter,
                 dry_run=self.dry_run,

@@ -21,6 +21,7 @@ Python packages.
 ## Contents
 
 - [Recent Changes](#recent-changes)
+    - [Incompatible Changes](#incompatible-changes)
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Invocation](#invocation)
@@ -38,6 +39,18 @@ Python packages.
 ## Recent Changes
 
 See [NEWS][].
+
+
+### Incompatible Changes
+
+As of v0.7.0, there are a few significant changes to command-line flags:
+
+| Old (pre-0.7.0) | New (post-0.7.0) | Description |
+|-----------------|------------------|-------------|
+| `-d`, `--dev`, `-r dev` | `-D`, `--devplus`, `-r devplus` | Opinionated dev requirements |
+| *nothing* | `-d`, `--dev`, `-r dev` | Generic `requirements_dev.txt` |
+| `-P`, `--package`, `-r package` | `--package`, `-r package` | Install a package named like the current Python project | 
+| *nothing* | `-P`, `--pip`, `-r pip` | Install packages/wheels/pip requirements named on the command line |
 
 
 ## Requirements
@@ -145,6 +158,8 @@ what to install into a virtual environment ("requirement schemes"):
   `requirements_frozen.txt` file.
 - **Package** -- using the name of the Python project in the current directory
   as a package to `pip install`.
+- **Pip** -- using the additional arguments on the command line as arguments
+  to `pip install`.
 - **Source** -- using the Python project in the current directory as a thing
   to install via `python3 setup.py install`.
 - **Wheel** -- using the Python project in the current directory as a thing
@@ -161,6 +176,7 @@ These schemes correspond roughly to the following:
 | plain | `pip install -r requirements.txt` |
 | frozen | `pip install -r requirements_frozen.txt` |
 | package | `pip install this-package-name` |
+| pip | `pip install ARG1 ARG2 ...` |
 | source | `python3 setup.py install` |
 | wheel | `python3 setup.py bdist_wheel && pip install WHEELFILE` |
 | dev | `pip install -r requirements_dev.txt` |
@@ -170,6 +186,9 @@ These schemes correspond roughly to the following:
 > _Prior to v0.7.0, the `devplus` requirement scheme was known as `dev`, and
 > there was no generic `dev` equivalent._
 
+> :pushpin: ***NOTE:***
+> _Prior to v0.7.0, the `-P` command-line argument meant `--package`.  Now it
+> means `--pip`._
 
 ### Opinionation and Devplus Requirements
 

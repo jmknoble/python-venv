@@ -22,7 +22,10 @@
   a wheelfile (`-r wheel`) as a preferred alternative to `-r source`.
 - Change in `-r dev` to make it more generic; now it expects dev requirements
   to simply be in `requirements_dev.txt`.
-- Previous opinionated `-r dev` functionality is available as `-r devplus`.
+    - Previous opinionated `-r dev` functionality is available as `-r devplus`.
+- Add support for generic `pip install` using `-P`/`--pip`/`-r pip`.
+    - Previous `-P` functionality is still available as
+      `--package`/`-r package`.
 
 
 ## v0.6.x
