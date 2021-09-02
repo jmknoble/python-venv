@@ -26,7 +26,6 @@ class TestRequirements(unittest.TestCase):
         }
 
     def test_PV_RQ_000_symbols_exist(self):
-        _ = reqs.REQUIREMENTS_VENV
         _ = reqs.REQUIREMENTS_PLAIN
         _ = reqs.REQUIREMENTS_DEV
         _ = reqs.REQUIREMENTS_TEST
@@ -34,11 +33,19 @@ class TestRequirements(unittest.TestCase):
         _ = reqs.REQUIREMENTS_BUILD
         _ = reqs.REQUIREMENTS_PACKAGE
         _ = reqs.REQUIREMENTS_SOURCE
+        _ = reqs.REQUIREMENTS_CLEAN
+        _ = reqs.REQUIREMENTS_BDIST_WHEEL
+        _ = reqs.REQUIREMENTS_WHEELFILE
+        _ = reqs.REQUIREMENTS_VENV
+
         _ = reqs.REQ_SCHEME_PLAIN
         _ = reqs.REQ_SCHEME_DEV
         _ = reqs.REQ_SCHEME_FROZEN
         _ = reqs.REQ_SCHEME_PACKAGE
         _ = reqs.REQ_SCHEME_SOURCE
+        _ = reqs.REQ_SCHEME_WHEEL
+        _ = reqs.REQ_SCHEME_VENV
+
         _ = reqs.DEV_REQ_SCHEMES
         _ = reqs.ALL_REQ_SCHEMES
 
@@ -49,6 +56,8 @@ class TestRequirements(unittest.TestCase):
             ("req_scheme_frozen", reqs.REQ_SCHEME_FROZEN, "frozen"),
             ("req_scheme_package", reqs.REQ_SCHEME_PACKAGE, "package"),
             ("req_scheme_source", reqs.REQ_SCHEME_SOURCE, "source"),
+            ("req_scheme_wheel", reqs.REQ_SCHEME_WHEEL, "wheel"),
+            ("req_scheme_venv", reqs.REQ_SCHEME_VENV, "venv"),
         ]
     )
     def test_PV_RQ_001_symbol_interfaces(self, name, symbol, expected):

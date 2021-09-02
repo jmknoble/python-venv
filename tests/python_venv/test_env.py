@@ -427,6 +427,8 @@ class TestEnv_110_VenvCreate(unittest.TestCase):
             ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None),
             ("source_dry_run", reqs.REQ_SCHEME_SOURCE, True, None, None),
             ("source", reqs.REQ_SCHEME_SOURCE, False, None, None),
+            ("wheel_dry_run", reqs.REQ_SCHEME_WHEEL, True, None, None),
+            ("wheel", reqs.REQ_SCHEME_WHEEL, False, None, None),
             ("package_dry_run", reqs.REQ_SCHEME_PACKAGE, True, "argcomplete", None),
             ("package", reqs.REQ_SCHEME_PACKAGE, False, "argcomplete", None),
         ]
@@ -671,6 +673,8 @@ class TestEnv_120_VenvRemove(unittest.TestCase):
             ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None, None),
             ("source_dry_run", reqs.REQ_SCHEME_SOURCE, True, None, None, None),
             ("source", reqs.REQ_SCHEME_SOURCE, False, None, None, None),
+            ("wheel_dry_run", reqs.REQ_SCHEME_WHEEL, True, None, None, None),
+            ("wheel", reqs.REQ_SCHEME_WHEEL, False, None, None, None),
             (
                 "package_dry_run",
                 reqs.REQ_SCHEME_PACKAGE,
@@ -773,6 +777,8 @@ class TestEnv_130_VenvReplace(unittest.TestCase):
             ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None, None),
             ("source_dry_run", reqs.REQ_SCHEME_SOURCE, True, None, None, None),
             ("source", reqs.REQ_SCHEME_SOURCE, False, None, None, None),
+            ("wheel_dry_run", reqs.REQ_SCHEME_WHEEL, True, None, None, None),
+            ("wheel", reqs.REQ_SCHEME_WHEEL, False, None, None, None),
             (
                 "package_dry_run",
                 reqs.REQ_SCHEME_PACKAGE,
@@ -851,6 +857,8 @@ class TestEnv_130_VenvReplace(unittest.TestCase):
             ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None, None),
             ("source_dry_run", reqs.REQ_SCHEME_SOURCE, True, None, None, None),
             ("source", reqs.REQ_SCHEME_SOURCE, False, None, None, None),
+            ("wheel_dry_run", reqs.REQ_SCHEME_WHEEL, True, None, None, None),
+            ("wheel", reqs.REQ_SCHEME_WHEEL, False, None, None, None),
             (
                 "package_dry_run",
                 reqs.REQ_SCHEME_PACKAGE,
@@ -1186,6 +1194,8 @@ class TestEnv_210_CondaCreate(unittest.TestCase):
             ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None),
             ("source_dry_run", reqs.REQ_SCHEME_SOURCE, True, None, None),
             ("source", reqs.REQ_SCHEME_SOURCE, False, None, None),
+            ("wheel_dry_run", reqs.REQ_SCHEME_WHEEL, True, None, None),
+            ("wheel", reqs.REQ_SCHEME_WHEEL, False, None, None),
             ("package_dry_run", reqs.REQ_SCHEME_PACKAGE, True, "argcomplete", None),
             ("package", reqs.REQ_SCHEME_PACKAGE, False, "argcomplete", None),
         ]
@@ -1377,6 +1387,8 @@ class TestEnv_220_CondaRemove(unittest.TestCase):
             ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None),
             ("source_dry_run", reqs.REQ_SCHEME_SOURCE, True, None, None),
             ("source", reqs.REQ_SCHEME_SOURCE, False, None, None),
+            ("wheel_dry_run", reqs.REQ_SCHEME_WHEEL, True, None, None),
+            ("wheel", reqs.REQ_SCHEME_WHEEL, False, None, None),
             ("package_dry_run", reqs.REQ_SCHEME_PACKAGE, True, "argcomplete", None),
             ("package", reqs.REQ_SCHEME_PACKAGE, False, "argcomplete", None),
         ]
@@ -1457,6 +1469,8 @@ class TestEnv_230_CondaReplace(unittest.TestCase):
             ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None),
             ("source_dry_run", reqs.REQ_SCHEME_SOURCE, True, None, None),
             ("source", reqs.REQ_SCHEME_SOURCE, False, None, None),
+            ("wheel_dry_run", reqs.REQ_SCHEME_WHEEL, True, None, None),
+            ("wheel", reqs.REQ_SCHEME_WHEEL, False, None, None),
             ("package_dry_run", reqs.REQ_SCHEME_PACKAGE, True, "argcomplete", None),
             ("package", reqs.REQ_SCHEME_PACKAGE, False, "argcomplete", None),
         ]
@@ -1513,6 +1527,8 @@ class TestEnv_230_CondaReplace(unittest.TestCase):
             ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None),
             ("source_dry_run", reqs.REQ_SCHEME_SOURCE, True, None, None),
             ("source", reqs.REQ_SCHEME_SOURCE, False, None, None),
+            ("wheel_dry_run", reqs.REQ_SCHEME_WHEEL, True, None, None),
+            ("wheel", reqs.REQ_SCHEME_WHEEL, False, None, None),
             ("package_dry_run", reqs.REQ_SCHEME_PACKAGE, True, "argcomplete", None),
             ("package", reqs.REQ_SCHEME_PACKAGE, False, "argcomplete", None),
         ]
