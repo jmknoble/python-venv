@@ -20,7 +20,7 @@ def _generate_combinations(
     opt_types = ("short", "long", "abbrev_short", "abbrev_long")
     all_commands = ("create", "new", "remove", "rm", "replace")
     all_env_types = ("venv", "conda")
-    all_requirements = ("plain", "dev", "frozen", "package", "source")
+    all_requirements = ("plain", "dev", "frozen", "package", "source", "wheel")
     basenames = (None, "dummy-basename")
     env_names = (None, "dummy-env")
     forces = (False, True)
@@ -62,6 +62,7 @@ def _generate_combinations(
             "frozen": "-z",
             "package": "-P",
             "source": "-s",
+            "wheel": "-w",
         },
         "abbrev_long": {
             "venv": "--venv",
@@ -71,6 +72,7 @@ def _generate_combinations(
             "frozen": "--frozen",
             "package": "--package",
             "source": "--source",
+            "wheel": "--wheel",
         },
     }
     commands = all_commands if commands is None else commands
