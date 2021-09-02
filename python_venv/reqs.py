@@ -3,7 +3,7 @@
 import os.path
 import sys
 
-from . import const, exceptions, runcommand
+from . import const, exceptions, fmt, runcommand
 
 REQUIREMENTS_VENV = ["pip", "setuptools", "wheel"]
 
@@ -84,6 +84,12 @@ class ReqScheme(object):
             (optional) The basename of the Python package to install if using a
             package-based scheme.
 
+        formatter
+            (optional) A `~python_venv.fmt.Formatter()`:py:class: object to
+            use for string template formatting; if not supplied, one is
+            created and populated with any supplied values for `python` and
+            `basename`.
+
         dry_run
             (optional) If `True`-ish, run commands in dry-run mode.
 
@@ -108,6 +114,7 @@ class ReqScheme(object):
         scheme,
         python=None,
         basename=None,
+        formatter=None,
         dry_run=False,
         show_trace=True,
         env=None,
@@ -117,11 +124,16 @@ class ReqScheme(object):
         self.scheme = scheme
         self.python = python
         self.basename = basename
+        self.formatter = formatter
         self.dry_run = bool(dry_run)
         self.show_trace = bool(show_trace)
         self.env = env
         self.stdout = sys.stdout if stdout is None else stdout
         self.stderr = sys.stderr if stderr is None else stderr
+
+        if self.formatter is None:
+            self.formatter = fmt.Formatter(python=self.python, basename=self.basename)
+
         self.requirements = self._get_requirements()
         self._set_pip_install_command()
 
@@ -132,7 +144,7 @@ class ReqScheme(object):
         )
         if found is None:
             raise KeyError(self.scheme)
-        return found
+        return list(found)
 
     def is_dev(self):
         """Tell whether this is a development requirements scheme."""
@@ -142,6 +154,7 @@ class ReqScheme(object):
         """Set the path to the Python interpreter to use."""
         # TODO: Turn this into an @property
         self.python = python
+        self.formatter.add(python=python)
         self._set_pip_install_command()
 
     def _set_pip_install_command(self):
@@ -149,12 +162,8 @@ class ReqScheme(object):
             None if self.python is None else [self.python, "-m", "pip", "install"]
         )
 
-    def _replace(self, strings):
-        replacements = {
-            "python": self.python,
-            "basename": self.basename,
-        }
-        return [x.format(**replacements) for x in strings]
+    def _format(self, strings):
+        return self.formatter.format(strings)
 
     def _pip_argify_files(self, files):
         pip_arguments = []
@@ -167,10 +176,10 @@ class ReqScheme(object):
         return entry.get(const.FROM_FILES, [])
 
     def _get_requirements_packages(self, entry):
-        return self._replace(entry.get(const.FROM_PACKAGES, []))
+        return self._format(entry.get(const.FROM_PACKAGES, []))
 
     def _get_requirements_commands(self, entry):
-        return [self._replace(x) for x in entry.get(const.FROM_COMMANDS, [])]
+        return [self._format(x) for x in entry.get(const.FROM_COMMANDS, [])]
 
     def _collect_pip_arguments(self, entry):
         pip_arguments = self._pip_argify_files(self._get_requirements_files(entry))

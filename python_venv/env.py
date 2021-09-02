@@ -6,7 +6,7 @@ import shutil
 import stat
 import sys
 
-from . import const, exceptions, reqs, runcommand
+from . import const, exceptions, fmt, reqs, runcommand
 
 ####################
 
@@ -73,6 +73,8 @@ class BaseVirtualEnvironment(object):
         self._env_name = env_name
         self._env_prefix = env_prefix
 
+        self.formatter = fmt.Formatter(basename=self._basename)
+
         self.dry_run = dry_run
         self.force = force
         self.message_prefix = message_prefix
@@ -109,6 +111,7 @@ class BaseVirtualEnvironment(object):
             self._requirements = reqs.ReqScheme(
                 self.req_scheme,
                 basename=self.basename,
+                formatter=self.formatter,
                 dry_run=self.dry_run,
                 env=self.os_environ,
             )
@@ -117,28 +120,29 @@ class BaseVirtualEnvironment(object):
     @property
     def package_name(self):
         """Get the package name for the Python project in the current directory."""
-        try:
-            self._package_name
-        except AttributeError:
-            self._package_name = None
-
-        if self._package_name is None:
-            self._package_name = runcommand.run_command(
-                [self.python, "setup.py", "--name"],
-                dry_run=False,
-                return_output=True,
-                show_trace=False,
-                env=self.os_environ,
-            )
-            if self._package_name.endswith("\n"):
-                self._package_name = self._package_name[:-1]
-        return self._package_name
+        if not self.formatter.has("name"):
+            for (attr, command) in [
+                ("name", [self.python, "setup.py", "--name"]),
+                ("version", [self.python, "setup.py", "--version"]),
+            ]:
+                value = runcommand.run_command(
+                    command,
+                    dry_run=False,
+                    return_output=True,
+                    show_trace=False,
+                    env=self.os_environ,
+                )
+                if value.endswith("\n"):
+                    value = value[:-1]
+                self.formatter.set(attr, value)
+        return self.formatter.get("name")
 
     @property
     def basename(self):
         """Get the basename for the Python project in the current directory."""
         if self._basename is None:
             self._basename = self.package_name.replace("_", "-")
+            self.formatter.add(basename=self._basename)
         return self._basename
 
     @property

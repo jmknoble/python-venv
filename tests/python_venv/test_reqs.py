@@ -163,10 +163,10 @@ class TestRequirements(unittest.TestCase):
             ),
         ]
     )
-    def test_PV_RQ_050_replace(self, name, kwargs, expected):
+    def test_PV_RQ_050_format(self, name, kwargs, expected):
         self._set_dummy_requirements()
         x = reqs.ReqScheme("dummy_req_scheme", **kwargs)
-        result = x._replace(["{python} {basename}"])
+        result = x._format(["{python} {basename}"])
         self.assertListEqual(result, [expected])
 
     # TODO: Better testing of reqs.ReqScheme().fulfill()
