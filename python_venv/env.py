@@ -92,6 +92,8 @@ class BaseVirtualEnvironment(object):
         self._package_name = None
         self._env_description = None
 
+        self._have_setup_py = None
+
         if self.message_prefix is None:
             self.message_prefix = const.MESSAGE_PREFIX
 
@@ -125,9 +127,22 @@ class BaseVirtualEnvironment(object):
         return self._requirements
 
     @property
+    def have_setup_py(self):
+        """Check (and cache) whether a setup.py exists."""
+        if self._have_setup_py is None:
+            self._have_setup_py = os.path.exists("setup.py")
+        return self._have_setup_py
+
+    @property
+    def need_setup_py(self):
+        return self.req_scheme not in {reqs.REQ_SCHEME_PIP}
+
+    @property
     def package_name(self):
         """Get the package name for the Python project in the current directory."""
         if not self.formatter.has("name"):
+            if not self.need_setup_py and not self.have_setup_py:
+                return None
             for (attr, command) in [
                 ("name", [self.python, "setup.py", "--name"]),
                 ("version", [self.python, "setup.py", "--version"]),
@@ -147,7 +162,7 @@ class BaseVirtualEnvironment(object):
     @property
     def basename(self):
         """Get the basename for the Python project in the current directory."""
-        if self._basename is None:
+        if self._basename is None and self.package_name is not None:
             self._basename = self.package_name.replace("_", "-")
             self.formatter.add(basename=self._basename)
         return self._basename
