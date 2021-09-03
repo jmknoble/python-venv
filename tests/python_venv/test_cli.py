@@ -430,7 +430,7 @@ class TestCli(unittest.TestCase):
         noun = "file" if len(reqs) == 1 else "files"
         reqs = ", ".join(reqs)
         with ctx.project("dummy_package", filespecs=filespecs):
-            with ctx.capture(
+            with ctx.capture_to_file(
                 cli.main,
                 "python-venv",
                 "create",

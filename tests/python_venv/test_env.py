@@ -357,7 +357,7 @@ class TestEnv_100_VenvEnvironment(unittest.TestCase):
             env_name=".dummy-venv",
             ignore_preflight_checks=True,
         )
-        with ctx.capture(x.create, check_preexisting=False) as (
+        with ctx.capture_to_file(x.create, check_preexisting=False) as (
             status,
             _stdout,
             stderr,
@@ -395,7 +395,7 @@ class TestEnv_100_VenvEnvironment(unittest.TestCase):
             env_name=".dummy-venv",
             ignore_preflight_checks=True,
         )
-        with ctx.capture(x.replace) as (status, _stdout, stderr):
+        with ctx.capture_to_file(x.replace) as (status, _stdout, stderr):
             self.assertTrue(expected_text in stderr)
 
 
