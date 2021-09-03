@@ -6,6 +6,8 @@
 ## Contents
 
 - [v0.7.x](#v07x)
+    - [v0.7.1](#v071)
+    - [v0.7.0](#v070)
 - [v0.6.x](#v06x)
 - [v0.5.x](#v05x)
 - [v0.4.x](#v04x)
@@ -17,6 +19,13 @@
 
 
 ## v0.7.x
+
+### v0.7.1
+
+- BUGFIX: Do not require a `setup.py` to be present when using
+  `-P`/`--pip`/`-r pip`.
+
+### v0.7.0
 
 - Add support for creating environments by building and installing
   a wheelfile (`-r wheel`) as a preferred alternative to `-r source`.

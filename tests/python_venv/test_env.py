@@ -470,6 +470,61 @@ class TestEnv_110_VenvCreate(unittest.TestCase):
 
     @parameterized.parameterized.expand(
         [
+            ("plain_dry_run", reqs.REQ_SCHEME_PLAIN, True, None, None, []),
+            ("plain", reqs.REQ_SCHEME_PLAIN, False, None, None, []),
+            (
+                "plain_dry_run_env_name",
+                reqs.REQ_SCHEME_PLAIN,
+                True,
+                None,
+                ".dummy-venv",
+                [],
+            ),
+            ("plain_env_name", reqs.REQ_SCHEME_PLAIN, False, None, ".dummy-venv", []),
+            ("dev_dry_run", reqs.REQ_SCHEME_DEV, True, None, None, []),
+            ("dev", reqs.REQ_SCHEME_DEV, False, None, None, []),
+            ("devplus_dry_run", reqs.REQ_SCHEME_DEVPLUS, True, None, None, []),
+            ("devplus", reqs.REQ_SCHEME_DEVPLUS, False, None, None, []),
+            ("frozen_dry_run", reqs.REQ_SCHEME_FROZEN, True, None, None, []),
+            ("frozen", reqs.REQ_SCHEME_FROZEN, False, None, None, []),
+            ("source_dry_run", reqs.REQ_SCHEME_SOURCE, True, None, None, []),
+            ("source", reqs.REQ_SCHEME_SOURCE, False, None, None, []),
+            ("wheel_dry_run", reqs.REQ_SCHEME_WHEEL, True, None, None, []),
+            ("wheel", reqs.REQ_SCHEME_WHEEL, False, None, None, []),
+            ("package_dry_run", reqs.REQ_SCHEME_PACKAGE, True, "argcomplete", None, []),
+            ("package", reqs.REQ_SCHEME_PACKAGE, False, "argcomplete", None, []),
+            ("pip_dry_run", reqs.REQ_SCHEME_PIP, True, None, None, ["argcomplete"]),
+            ("pip", reqs.REQ_SCHEME_PIP, False, None, None, ["argcomplete"]),
+        ]
+    )
+    def test_PV_ENV_VNV_111_create_no_setup(
+        self, name, req_scheme, dry_run, basename, env_name, pip_args
+    ):
+        filespecs = {
+            "requirements.txt": "argcomplete",
+            "requirements_dev.txt": "argcomplete",
+            "requirements_frozen.txt": "argcomplete == 1.12.3",
+            os.path.join("dev", "requirements_build.txt"): "",
+            os.path.join("dev", "requirements_dev.txt"): "",
+            os.path.join("dev", "requirements_test.txt"): "parameterized",
+        }
+        should_raise = not (
+            req_scheme in {reqs.REQ_SCHEME_PIP}
+            or (req_scheme in {reqs.REQ_SCHEME_PACKAGE} and basename is not None)
+        )
+        with ctx.project("dummy_package", filespecs=filespecs, omit_setup=True):
+            with ctx.capture_output_to_file():
+                x = env.VenvEnvironment(
+                    req_scheme, basename=basename, env_name=env_name, dry_run=dry_run
+                )
+                if should_raise:
+                    with self.assertRaises(subprocess.CalledProcessError):
+                        x.create(check_preexisting=True)
+                else:
+                    x.create(check_preexisting=True)
+
+    @parameterized.parameterized.expand(
+        [
             ("plain_dry_run", reqs.REQ_SCHEME_PLAIN, True, None, None, "dummy-prefix"),
             ("plain", reqs.REQ_SCHEME_PLAIN, False, None, None, "dummy-prefix"),
             ("plain_curdir", reqs.REQ_SCHEME_PLAIN, False, None, None, os.curdir),

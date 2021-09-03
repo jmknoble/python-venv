@@ -51,6 +51,36 @@ def capture_to_file(a_callable, *args, **kwargs):
         sys.stderr = orig_stderr
 
 
+@contextlib.contextmanager
+def capture_output():
+    """Capture stdout, and stderr"""
+    (orig_stdout, sys.stdout) = (sys.stdout, StringIO())
+    (orig_stderr, sys.stderr) = (sys.stderr, StringIO())
+    try:
+        yield (sys.stdout, sys.stderr)
+    finally:
+        sys.stdout.close()
+        sys.stderr.close()
+        sys.stdout = orig_stdout
+        sys.stderr = orig_stderr
+
+
+@contextlib.contextmanager
+def capture_output_to_file():
+    """Capture stdout, and stderr"""
+    orig_stdout = sys.stdout
+    orig_stderr = sys.stderr
+    try:
+        sys.stdout = tempfile.SpooledTemporaryFile(mode="w+", suffix=".out")
+        sys.stderr = tempfile.SpooledTemporaryFile(mode="w+", suffix=".err")
+        yield (sys.stdout, sys.stderr)
+    finally:
+        sys.stdout.close()
+        sys.stderr.close()
+        sys.stdout = orig_stdout
+        sys.stderr = orig_stderr
+
+
 SETUP_TEMPLATE = """
 import os.path
 from setuptools import find_packages, setup
@@ -145,7 +175,9 @@ def _clean_environ_copy(environ):
 
 
 @contextlib.contextmanager
-def project(package_name, dirs=None, filespecs=None, cleanup=None, **kwargs):
+def project(
+    package_name, dirs=None, filespecs=None, cleanup=None, omit_setup=False, **kwargs
+):
     """
     Set up a mock Python project to create an environment from and change
     directory to it.
@@ -174,6 +206,9 @@ def project(package_name, dirs=None, filespecs=None, cleanup=None, **kwargs):
             (optional) a callable; if supplied, will be called on exiting the
             context manager before any other cleanup.
 
+        omit_setup
+            (optional) if `True`-ish, omit ``setup.py`` from the project.
+
         kwargs
             (optional) additional keyword arguments used for formatting
             contents of files
@@ -191,8 +226,9 @@ def project(package_name, dirs=None, filespecs=None, cleanup=None, **kwargs):
         temp_dir = tempfile.TemporaryDirectory()
         os.chdir(temp_dir.name)
 
-        with open("setup.py", "w") as f:
-            f.write(SETUP_TEMPLATE.format(package_name=package_name))
+        if not omit_setup:
+            with open("setup.py", "w") as f:
+                f.write(SETUP_TEMPLATE.format(package_name=package_name))
 
         package_dir = _ensure_relative_path(package_name)
         os.mkdir(package_dir)

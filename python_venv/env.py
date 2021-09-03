@@ -135,6 +135,7 @@ class BaseVirtualEnvironment(object):
 
     @property
     def need_setup_py(self):
+        """Tell whether a setup.py is necessary."""
         return self.req_scheme not in {reqs.REQ_SCHEME_PIP}
 
     @property
@@ -153,6 +154,7 @@ class BaseVirtualEnvironment(object):
                     return_output=True,
                     show_trace=False,
                     env=self.os_environ,
+                    stderr=sys.stderr,
                 )
                 if value.endswith("\n"):
                     value = value[:-1]
