@@ -4,6 +4,7 @@ import os
 import os.path
 import shutil
 import stat
+import subprocess
 import sys
 
 from . import const, exceptions, fmt, reqs, runcommand
@@ -178,10 +179,16 @@ class BaseVirtualEnvironment(object):
 
     @property
     def env_prefix(self):
-        """Get the environment's containing directory."""
+        """Get the prefix or containing directory for the environment."""
         if self._env_prefix is None:
             return ""
         return self._env_prefix
+
+    def have_env_prefix(self):
+        """
+        Tell if `~python_venv.env.BaseVirtualEnvironment.env_prefix`:py:attr: is set.
+        """
+        return bool(self.env_prefix)
 
     @property
     def env_dir(self):
@@ -294,9 +301,12 @@ class VenvEnvironment(BaseVirtualEnvironment):
         self.requirements.use_python(env_python)
         self.requirements.fulfill()
 
-        self.progress("Done.")
-        if not self.dry_run:
-            self.progress(f"To use your virtual environment: 'source {env_activate}'.")
+        if emit_done:
+            self.progress("Done.")
+            if not self.dry_run:
+                self.progress(
+                    f"To use your virtual environment: 'source {env_activate}'."
+                )
 
     def remove(self, emit_done=True):
         """Remove this environment."""
@@ -317,7 +327,151 @@ class VenvEnvironment(BaseVirtualEnvironment):
         if not self.dry_run:
             shutil.rmtree(self.env_dir, onerror=_retry_readonly)
 
-        self.progress("Done.")
+        if emit_done:
+            self.progress("Done.")
+
+
+####################
+
+
+class PyenvEnvironment(BaseVirtualEnvironment):
+    """
+    Model a `pyenv-virtualenv`_ virtual environment.
+
+    .. _ https://github.com/pyenv/pyenv-virtualenv
+    """
+
+    @property
+    def env_name(self):
+        """Get the name for this environment."""
+        if self._env_name is None:
+            self._env_name = self.basename
+            if self.requirements.is_dev():
+                self._env_name += const.DEV_SUFFIX
+        if self.have_env_prefix():
+            return "-".join([self.env_prefix, self._env_name])
+        return self._env_name
+
+    @property
+    def env_dir(self):
+        """Get the directory where this environment lives."""
+        return self.get_pyenv_env_dir()
+
+    def get_pyenv_env_dir(self):
+        """Get the directory where this environment lives, if pyenv manages it."""
+        if self.dry_run:
+            return "ENV_DIR"
+
+        try:
+            env_dir = runcommand.run_command(
+                [const.PYENV, "prefix", self.env_name],
+                return_output=True,
+                show_trace=False,
+                dry_run=self.dry_run,
+                env=self.os_environ,
+                stderr=subprocess.DEVNULL,
+            )
+        except subprocess.CalledProcessError:
+            raise exceptions.EnvNotFoundError(
+                f"unable to find pyenv environment {self.env_name}"
+            )
+        if env_dir.endswith("\n"):
+            env_dir = env_dir[:-1]
+
+        return env_dir
+
+    @property
+    def env_description(self):
+        """Get a textual description of this environment."""
+        if self._env_description is None:
+            self._env_description = f"pyenv environment {self.env_name}"
+        return self._env_description
+
+    def env_exists(self, want=True):
+        """Tell whether this environment already exists."""
+        if not self.have_env_prefix():
+            try:
+                self.get_pyenv_env_dir()
+            except exceptions.EnvNotFoundError:
+                return False
+            return bool(want) if self.dry_run else True
+        if os.path.isdir(self.env_dir):
+            return True
+        if os.path.exists(self.env_dir):
+            raise exceptions.EnvOccludedError(
+                f"{self.env_dir} exists, but is not a directory"
+            )
+        return False
+
+    def create(self, check_preexisting=True, run_preflight_checks=True, emit_done=True):
+        """Create this environment."""
+        self.progress(f"Creating {self.env_description}")
+
+        if run_preflight_checks:
+            self.preflight_checks_for_create()
+
+        if self.env_exists(want=False) and (
+            not self.dry_run or (self.dry_run and check_preexisting)
+        ):
+            raise exceptions.EnvExistsError(f"Found preexisting {self.env_name}")
+
+        runcommand.run_command(
+            [const.PYENV, "virtualenv", self.env_name],
+            show_trace=True,
+            dry_run=self.dry_run,
+            env=self.os_environ,
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+        )
+        verb = "Would have created" if self.dry_run else "Created"
+        self.progress(f"{verb} {self.env_name}", suffix=None)
+
+        env_bin_dir = os.path.join(self.env_dir, "bin")
+        env_python = os.path.join(env_bin_dir, self.python)
+
+        self.progress(f"Installing {self.req_scheme} requirements")
+
+        venv_requirements = reqs.ReqScheme(
+            reqs.REQ_SCHEME_VENV,
+            python=env_python,
+            dry_run=self.dry_run,
+            env=self.os_environ,
+        )
+        venv_requirements.fulfill(upgrade=True)
+
+        self.requirements.use_python(env_python)
+        self.requirements.fulfill()
+
+        if emit_done:
+            self.progress("Done.")
+            if not self.dry_run:
+                self.progress(
+                    "To use your virtual environment: "
+                    f"'pyenv activate {self.env_name}'."
+                )
+
+    def remove(self, emit_done=True):
+        """Remove this environment."""
+        self.progress(f"Removing {self.env_description}")
+
+        if not self.env_exists():
+            self.progress(f"Good news!  There is no {self.env_description}.")
+            return
+
+        pyenv_command = [const.PYENV, "virtualenv-delete"]
+        if self.force:
+            pyenv_command.append("-f")
+        pyenv_command.append(self.env_name)
+        runcommand.run_command(
+            pyenv_command,
+            show_trace=True,
+            dry_run=self.dry_run,
+            env=self.os_environ,
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+        )
+        if emit_done:
+            self.progress("Done.")
 
 
 ####################
@@ -351,12 +505,6 @@ class CondaEnvironment(BaseVirtualEnvironment):
                 self._env_name += const.DEV_SUFFIX
         return self._env_name
 
-    def have_env_prefix(self):
-        """
-        Tell whether `~python_venv.env.CondaEnvironment.env_prefix`:py:attr: is set.
-        """
-        return bool(self.env_prefix)
-
     @property
     def env_dir(self):
         """Get the directory where this environment lives."""
@@ -367,7 +515,7 @@ class CondaEnvironment(BaseVirtualEnvironment):
     def get_conda_env_dir(self):
         """Get the directory where this environment lives, if conda manages it."""
         if self.dry_run:
-            return "CONDA_ENV_DIR"
+            return "ENV_DIR"
 
         env_listing = runcommand.run_command(
             [const.CONDA, "env", "list"],
@@ -456,7 +604,7 @@ class CondaEnvironment(BaseVirtualEnvironment):
             if not self.dry_run:
                 self.progress(
                     "To use your virtual environment: "
-                    f"'source activate {self.env_name}'."
+                    f"'conda activate {self.env_name}'."
                 )
 
     def remove(self, emit_done=True):

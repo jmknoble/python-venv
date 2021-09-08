@@ -57,9 +57,9 @@ or '{reqs.REQUIREMENTS_TEST}').
 
 Venv virtual environments are created in '{const.VENV_DIR}'.
 
-Conda virtual environments are created using the name of the Python project
-(via '{const.PYTHON} setup.py --name'), with underscores ('_') replaced by hyphens ('-')
-and with '{const.DEV_SUFFIX}' appended for development environments.
+Pyenv and Conda virtual environments are created using the name of the Python
+project (via '{const.PYTHON} setup.py --name'), with underscores ('_') replaced by
+hyphens ('-') and with '{const.DEV_SUFFIX}' appended for development environments.
 """
 
 DESCRIPTION_CREATE = """
@@ -225,6 +225,14 @@ def _add_venv_arguments(argparser, req_scheme_required=False, **_kwargs):
         help=f"Same as '--type {const.ENV_TYPE_VENV}'",
     )
     venv_mutex_group.add_argument(
+        "-y",
+        f"--{const.ENV_TYPE_PYENV}",
+        action="store_const",
+        dest="env_type",
+        const=const.ENV_TYPE_PYENV,
+        help=f"Same as '--type {const.ENV_TYPE_PYENV}'",
+    )
+    venv_mutex_group.add_argument(
         "-c",
         f"--{const.ENV_TYPE_CONDA}",
         action="store_const",
@@ -241,7 +249,8 @@ def _add_venv_arguments(argparser, req_scheme_required=False, **_kwargs):
         help=(
             "Name of (or path to) virtual environment "
             "(default: '.venv' for venv environments, or "
-            "inferred from BASENAME for conda environments)"
+            "inferred from BASENAME for pyenv and conda "
+            "environments)"
         ),
     )
 
@@ -249,7 +258,7 @@ def _add_venv_arguments(argparser, req_scheme_required=False, **_kwargs):
         "other_args",
         metavar="...",
         nargs=argparse.REMAINDER,
-        help="Requirements to pass to 'pip' when using '--pip'",
+        help=f"Requirements to pass to 'pip' when using '--{reqs.REQ_SCHEME_PIP}'",
     )
 
     return argparser
@@ -257,6 +266,7 @@ def _add_venv_arguments(argparser, req_scheme_required=False, **_kwargs):
 
 def _add_force_arguments(argparser, **_kwargs):
     argparser.add_argument(
+        "-f",
         "--force",
         action="store_true",
         help="Do not prompt for confirmation",
@@ -336,6 +346,8 @@ def _get_virtual_env(args):
 
     if args.env_type == const.ENV_TYPE_VENV:
         virtual_env = env.VenvEnvironment(args.req_scheme, **kwargs)
+    elif args.env_type == const.ENV_TYPE_PYENV:
+        virtual_env = env.PyenvEnvironment(args.req_scheme, **kwargs)
     elif args.env_type == const.ENV_TYPE_CONDA:
         virtual_env = env.CondaEnvironment(args.req_scheme, **kwargs)
 
