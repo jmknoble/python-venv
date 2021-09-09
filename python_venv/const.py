@@ -8,16 +8,26 @@ PYTHON = "python3"
 PYTHON_VERSION_REGEX = r"^[0-9]+(\.[0-9]+){0,2}"  # Must start with X, X.Y, or X.Y.Z
 
 CONDA = "conda"
+PYENV = "pyenv"
 VENV_DIR = ".venv"
 DEV_SUFFIX = "-dev"
 
 MESSAGE_PREFIX = "==> "
 
+ENV_DIR_PLACEHOLDER = "<ENV_DIR>"
+
 ENV_TYPE_VENV = "venv"
+ENV_TYPE_PYENV = "pyenv"
 ENV_TYPE_CONDA = "conda"
 
 ENV_TYPES = [
     ENV_TYPE_VENV,
+    ENV_TYPE_PYENV,
+    ENV_TYPE_CONDA,
+]
+
+ENV_TYPES_NAMED = [
+    ENV_TYPE_PYENV,
     ENV_TYPE_CONDA,
 ]
 

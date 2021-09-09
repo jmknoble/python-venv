@@ -22,12 +22,16 @@ class TestConst(unittest.TestCase):
         _ = const.PYTHON
         _ = const.PYTHON_VERSION_REGEX
         _ = const.CONDA
+        _ = const.PYENV
         _ = const.VENV_DIR
         _ = const.DEV_SUFFIX
         _ = const.MESSAGE_PREFIX
+        _ = const.ENV_DIR_PLACEHOLDER
         _ = const.ENV_TYPE_VENV
+        _ = const.ENV_TYPE_PYENV
         _ = const.ENV_TYPE_CONDA
         _ = const.ENV_TYPES
+        _ = const.ENV_TYPES_NAMED
         _ = const.FROM_FILES
         _ = const.FROM_PACKAGES
         _ = const.FROM_COMMANDS
