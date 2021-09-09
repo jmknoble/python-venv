@@ -500,7 +500,7 @@ class PyenvEnvironment(BaseVirtualEnvironment):
         """Suggest how to activate the environment."""
         if not self.dry_run:
             self.progress(
-                "To use your virtual environment: 'pyenv activate {self.env_name}'."
+                f"To use your virtual environment: 'pyenv activate {self.env_name}'."
             )
 
     def do_remove(self):
@@ -654,7 +654,7 @@ class CondaEnvironment(BaseVirtualEnvironment):
         """Suggest how to activate the environment."""
         if not self.dry_run:
             self.progress(
-                "To use your virtual environment: 'conda activate {self.env_name}'."
+                f"To use your virtual environment: 'conda activate {self.env_name}'."
             )
 
     def do_remove(self):
