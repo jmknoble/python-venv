@@ -18,7 +18,7 @@ def _generate_combinations(
     commands=None, env_types=None, requirements=None, action=None
 ):
     opt_types = ("short", "long", "abbrev_short", "abbrev_long")
-    all_commands = ("create", "new", "remove", "rm", "replace")
+    all_commands = ("create", "new", "remove", "rm", "replace", "rpl")
     all_env_types = ("venv", "pyenv", "conda")
     all_requirements = (
         "plain",
@@ -41,6 +41,7 @@ def _generate_combinations(
         "remove": "remove",
         "rm": "remove",
         "replace": "replace",
+        "rpl": "replace",
     }
     opts = {
         "short": {
@@ -224,6 +225,7 @@ class TestCli(unittest.TestCase):
             ("remove", ["remove"]),
             ("rm", ["rm"]),
             ("replace", ["replace"]),
+            ("rpl", ["rpl"]),
             ("invalid", ["yuck"]),
         ]
     )
@@ -247,6 +249,8 @@ class TestCli(unittest.TestCase):
             ("rm_long", "rm", "--help"),
             ("replace_short", "replace", "-h"),
             ("replace_long", "replace", "--help"),
+            ("rpl_short", "rpl", "-h"),
+            ("rpl_long", "rpl", "--help"),
             ("completion_short", "completion", "-h"),
             ("completion_long", "completion", "--help"),
         ]
@@ -300,7 +304,7 @@ class TestCli(unittest.TestCase):
     ####################
 
     @parameterized.parameterized.expand(
-        _generate_combinations(commands=["create"], env_types=["venv"])
+        _generate_combinations(commands=["create", "new"], env_types=["venv"])
     )
     def test_PV_CLI_100_venv(
         self, name, command, action, options, req_scheme, add_kwargs
@@ -314,7 +318,7 @@ class TestCli(unittest.TestCase):
         action_method.assert_called_once_with()
 
     @parameterized.parameterized.expand(
-        _generate_combinations(commands=["remove"], env_types=["venv"])
+        _generate_combinations(commands=["remove", "rm"], env_types=["venv"])
     )
     def test_PV_CLI_110_venv(
         self, name, command, action, options, req_scheme, add_kwargs
@@ -328,7 +332,7 @@ class TestCli(unittest.TestCase):
         action_method.assert_called_once_with()
 
     @parameterized.parameterized.expand(
-        _generate_combinations(commands=["replace"], env_types=["venv"])
+        _generate_combinations(commands=["replace", "rpl"], env_types=["venv"])
     )
     def test_PV_CLI_120_venv(
         self, name, command, action, options, req_scheme, add_kwargs
@@ -350,7 +354,7 @@ class TestCli(unittest.TestCase):
     ####################
 
     @parameterized.parameterized.expand(
-        _generate_combinations(commands=["create"], env_types=["pyenv"])
+        _generate_combinations(commands=["create", "new"], env_types=["pyenv"])
     )
     def test_PV_CLI_200_pyenv(
         self, name, command, action, options, req_scheme, add_kwargs
@@ -364,7 +368,7 @@ class TestCli(unittest.TestCase):
         action_method.assert_called_once_with()
 
     @parameterized.parameterized.expand(
-        _generate_combinations(commands=["remove"], env_types=["pyenv"])
+        _generate_combinations(commands=["remove", "rm"], env_types=["pyenv"])
     )
     def test_PV_CLI_210_pyenv(
         self, name, command, action, options, req_scheme, add_kwargs
@@ -378,7 +382,7 @@ class TestCli(unittest.TestCase):
         action_method.assert_called_once_with()
 
     @parameterized.parameterized.expand(
-        _generate_combinations(commands=["replace"], env_types=["pyenv"])
+        _generate_combinations(commands=["replace", "rpl"], env_types=["pyenv"])
     )
     def test_PV_CLI_220_pyenv(
         self, name, command, action, options, req_scheme, add_kwargs
@@ -407,7 +411,7 @@ class TestCli(unittest.TestCase):
     ####################
 
     @parameterized.parameterized.expand(
-        _generate_combinations(commands=["create"], env_types=["conda"])
+        _generate_combinations(commands=["create", "new"], env_types=["conda"])
     )
     def test_PV_CLI_300_conda(
         self, name, command, action, options, req_scheme, add_kwargs
@@ -421,7 +425,7 @@ class TestCli(unittest.TestCase):
         action_method.assert_called_once_with()
 
     @parameterized.parameterized.expand(
-        _generate_combinations(commands=["remove"], env_types=["conda"])
+        _generate_combinations(commands=["remove", "rm"], env_types=["conda"])
     )
     def test_PV_CLI_310_conda(
         self, name, command, action, options, req_scheme, add_kwargs
@@ -435,7 +439,7 @@ class TestCli(unittest.TestCase):
         action_method.assert_called_once_with()
 
     @parameterized.parameterized.expand(
-        _generate_combinations(commands=["replace"], env_types=["conda"])
+        _generate_combinations(commands=["replace", "rpl"], env_types=["conda"])
     )
     def test_PV_CLI_320_conda(
         self, name, command, action, options, req_scheme, add_kwargs

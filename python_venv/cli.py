@@ -30,6 +30,7 @@ COMMANDS = {
     },
     COMMAND_REPLACE: {
         "help": "Remove and re-create a Python virtual environment",
+        "aliases": ["rpl"],
         "req_scheme_required": True,
     },
     COMMAND_COMPLETION: {
