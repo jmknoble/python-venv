@@ -319,7 +319,6 @@ class TestEnv_310_CondaCreate(unittest.TestCase):
             ("pip", reqs.REQ_SCHEME_PIP, False, None, None, ["argcomplete"]),
         ]
     )
-    @unittest.skipUnless(flags.should_run_long_tests(), flags.SKIP_LONG_RUNNING_MESSAGE)
     def test_PV_ENV_CDA_110_create(
         self, name, req_scheme, dry_run, basename, env_name, pip_args
     ):
@@ -409,7 +408,6 @@ class TestEnv_310_CondaCreate(unittest.TestCase):
             ("plain_env_name", reqs.REQ_SCHEME_PLAIN, False, "dummy-env", True),
         ]
     )
-    @unittest.skipUnless(flags.should_run_long_tests(), flags.SKIP_LONG_RUNNING_MESSAGE)
     def test_PV_ENV_CDA_130_create_duplicate(
         self, name, req_scheme, dry_run, env_name, should_raise
     ):
@@ -507,7 +505,6 @@ class TestEnv_320_CondaRemove(unittest.TestCase):
             ("pip", reqs.REQ_SCHEME_PIP, False, None, None, ["argcomplete"]),
         ]
     )
-    @unittest.skipUnless(flags.should_run_long_tests(), flags.SKIP_LONG_RUNNING_MESSAGE)
     def test_PV_ENV_CDA_210_remove(
         self, name, req_scheme, dry_run, basename, env_name, pip_args
     ):
@@ -599,7 +596,6 @@ class TestEnv_330_CondaReplace(unittest.TestCase):
             ("pip", reqs.REQ_SCHEME_PIP, False, None, None, ["argcomplete"]),
         ]
     )
-    @unittest.skipUnless(flags.should_run_long_tests(), flags.SKIP_LONG_RUNNING_MESSAGE)
     def test_PV_ENV_CDA_310_replace_nonexistent(
         self, name, req_scheme, dry_run, basename, env_name, pip_args
     ):
@@ -664,7 +660,6 @@ class TestEnv_330_CondaReplace(unittest.TestCase):
             ("pip", reqs.REQ_SCHEME_PIP, False, None, None, ["argcomplete"]),
         ]
     )
-    @unittest.skipUnless(flags.should_run_long_tests(), flags.SKIP_LONG_RUNNING_MESSAGE)
     def test_PV_ENV_CDA_320_replace_existing(
         self, name, req_scheme, dry_run, basename, env_name, pip_args
     ):
