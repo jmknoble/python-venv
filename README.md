@@ -9,8 +9,8 @@
 An opinionated but flexible Python virtual environment tool.
 
 Enables straightforward creation, removal, or replacement of Python virtual
-environments using either [venv][] or [conda][], using predictable
-names/locations and flexible strategies.
+environments using [venv][], [pyenv-virtualenv][], or [conda][], using
+predictable names/locations and flexible strategies.
 
 Intended to be used by either developers or consumers of source-available
 Python packages.
@@ -75,12 +75,14 @@ For a [venv][] environment:
 
     python3 -m python_venv create -t venv -r wheel
 
-For a [conda][] environment:
+Similarly, for a [pyenv-virtualenv][] environment:
+
+    python3 -m python_venv create -t pyenv -r wheel --dry-run
+    python3 -m python_venv create -t pyenv -r wheel
+
+Or, for a [conda][] environment:
 
     python3 -m python_venv create -t conda -r wheel --dry-run
-
-and to actually do it:
-
     python3 -m python_venv create -t conda -r wheel
 
 
@@ -122,7 +124,7 @@ Remove that virtual enviroment:
 
     python-venv remove -t venv
 
-Create a [conda][] virtual environment nameed after the Python project in the
+Create a [conda][] virtual environment named after the Python project in the
 current directory using `requirements.txt`:
 
     python-venv create -t conda -r plain
@@ -130,6 +132,15 @@ current directory using `requirements.txt`:
 Remove that [conda][] environment:
 
     python-venv remove -t conda -r plain
+
+Create a [pyenv-virtualenv][] environment for development, named after the
+Python project in the current directory, and using `requirements_dev.txt`:
+
+    python-venv create -t pyenv -r dev
+
+Replace it with a new environment after updating `requirements_dev.txt`:
+
+    python-venv replace -t pyenv -r dev
 
 Display command-line help:
 
@@ -141,6 +152,7 @@ Display command-line help:
 **python-venv** knows how to create virtual environments using:
 
 - The [venv][] module built into Python 3.
+- The [pyenv-virtualenv][] plugin for [pyenv][].
 - The [conda][] tool that accompanies a [Miniconda][] or [Anaconda][] Python
   distribution.
 
@@ -217,21 +229,23 @@ The default "base name" comes from the Python project in the current directory
 
 This base name is used for:
 
-- The name of non-`dev` [conda][] environments as-is.
-- The name of `dev` and `devplus` [conda][] environments with a `-dev` suffix
-  (`python-venv-dev`).
+- The name of non-`dev` [conda][] and [pyenv][] environments as-is.
+- The name of `dev` and `devplus` [conda][] and [pyenv][] environments with a
+  `-dev` suffix (`python-venv-dev`).
 - The name of the Python package to install for `package` environments.
 
 You can choose your own base name using the `--basename` option; this will
 keep **python-env** from trying to use `setup.py` to find the name:
 
     python-venv create -t conda -r dev --basename python-venv-0.1.0
+    python-venv create -t pyenv -r plain --basename requirements-test
     python-venv create -t venv -r package --basename mypackage
 
 You can also choose your own environment name using the `--env-name` option if
 you want a different environment name:
 
     python-venv create -t conda -r plain --env-name myenv
+    python-venv create -t pyenv -r dev --env-name myenv-development
 
 Or, if you are using `venv` environments, if you want your virtual environment
 somewhere besides `.venv`:
@@ -253,6 +267,9 @@ For instructions on how to enable completion:
 ## References
 
 - [conda][]
+- [pyenv][]
+    - [pyenv-virtualenv][]
+    - [Managing Multiple Python Versions With pyenv][pyenv-article]
 - [venv][]
 - argcomplete on [PyPI][argcomplete-pypi] and [GitHub][argcomplete-github]
 
@@ -266,4 +283,7 @@ For instructions on how to enable completion:
  [Miniconda]: https://docs.conda.io/en/latest/miniconda.html
  [NEWS]: NEWS.md
  [Python]: https://www.python.org/
+ [pyenv]: https://github.com/pyenv/pyenv
+ [pyenv-article]: https://realpython.com/intro-to-pyenv/
+ [pyenv-virtualenv]: https://github.com/pyenv/pyenv-virtualenv
  [venv]: https://docs.python.org/3/library/venv.html
