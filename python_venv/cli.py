@@ -361,8 +361,11 @@ def _command_action_create(_prog, args):
 
 
 def _command_action_remove(_prog, args):
-    # set equivalence
-    if {args.env_type, args.env_name, args.req_scheme} == {const.ENV_TYPE_CONDA, None}:
+    if (
+        args.env_type in const.ENV_TYPES_NAMED
+        # set equivalence
+        and {args.env_name, args.req_scheme} == {None}
+    ):
         raise RuntimeError(
             "Please supply either the '-e/--env-name' or '-r/--requirements' "
             "option so we know the name of the environment to remove."

@@ -19,7 +19,7 @@ def _generate_combinations(
 ):
     opt_types = ("short", "long", "abbrev_short", "abbrev_long")
     all_commands = ("create", "new", "remove", "rm", "replace")
-    all_env_types = ("venv", "conda")
+    all_env_types = ("venv", "pyenv", "conda")
     all_requirements = (
         "plain",
         "dev",
@@ -49,7 +49,7 @@ def _generate_combinations(
             "basename": "-b",
             "env_name": "-e",
             "dry_run": "-n",
-            "force": "--force",
+            "force": "-f",
             "python_version": "--python-version",
         },
         "long": {
@@ -65,6 +65,7 @@ def _generate_combinations(
     abbrevs = {
         "abbrev_short": {
             "venv": "-v",
+            "pyenv": "-y",
             "conda": "-c",
             "plain": "-p",
             "dev": "-d",
@@ -77,6 +78,7 @@ def _generate_combinations(
         },
         "abbrev_long": {
             "venv": "--venv",
+            "pyenv": "--pyenv",
             "conda": "--conda",
             "plain": "--plain",
             "dev": "--dev",
@@ -274,6 +276,8 @@ class TestCli(unittest.TestCase):
         [
             ("venv_invalid_raises", "venv", "invalid_python_version", True),
             ("venv_valid_raises", "venv", "1.2.3", True),
+            ("pyenv_invalid_raises", "pyenv", "invalid_python_version", True),
+            ("pyenv_valid_raises", "pyenv", "1.2.3", True),
             ("conda_invalid_raises", "conda", "invalid_python_version", True),
             ("conda_major_only", "conda", "1", False),
             ("conda_major_minor", "conda", "1.2", False),
@@ -346,9 +350,66 @@ class TestCli(unittest.TestCase):
     ####################
 
     @parameterized.parameterized.expand(
+        _generate_combinations(commands=["create"], env_types=["pyenv"])
+    )
+    def test_PV_CLI_200_pyenv(
+        self, name, command, action, options, req_scheme, add_kwargs
+    ):
+        with patch.object(env.PyenvEnvironment, "__init__", return_value=None) as init:
+            with patch.object(env.PyenvEnvironment, action) as action_method:
+                cli.main("python-venv", command, *options)
+        kwargs = {"python": "python3"}
+        kwargs.update(add_kwargs)
+        init.assert_called_once_with(req_scheme, **kwargs)
+        action_method.assert_called_once_with()
+
+    @parameterized.parameterized.expand(
+        _generate_combinations(commands=["remove"], env_types=["pyenv"])
+    )
+    def test_PV_CLI_210_pyenv(
+        self, name, command, action, options, req_scheme, add_kwargs
+    ):
+        with patch.object(env.PyenvEnvironment, "__init__", return_value=None) as init:
+            with patch.object(env.PyenvEnvironment, action) as action_method:
+                cli.main("python-venv", command, *options)
+        kwargs = {"python": "python3"}
+        kwargs.update(add_kwargs)
+        init.assert_called_once_with(req_scheme, **kwargs)
+        action_method.assert_called_once_with()
+
+    @parameterized.parameterized.expand(
+        _generate_combinations(commands=["replace"], env_types=["pyenv"])
+    )
+    def test_PV_CLI_220_pyenv(
+        self, name, command, action, options, req_scheme, add_kwargs
+    ):
+        with patch.object(env.PyenvEnvironment, "__init__", return_value=None) as init:
+            with patch.object(env.PyenvEnvironment, action) as action_method:
+                cli.main("python-venv", command, *options)
+        kwargs = {"python": "python3"}
+        kwargs.update(add_kwargs)
+        init.assert_called_once_with(req_scheme, **kwargs)
+        action_method.assert_called_once_with()
+
+    def test_PV_CLI_230_pyenv_remove_minimal(self):
+        with ctx.capture_to_file(
+            cli.main, "python-venv", "remove", "-t", "pyenv", "--dry-run"
+        ) as (status, _stdout, stderr):
+            self.assertEqual(status, 1)
+            self.assertIn(
+                (
+                    "error: Please supply either the '-e/--env-name' "
+                    "or '-r/--requirements' option"
+                ),
+                stderr,
+            )
+
+    ####################
+
+    @parameterized.parameterized.expand(
         _generate_combinations(commands=["create"], env_types=["conda"])
     )
-    def test_PV_CLI_200_conda(
+    def test_PV_CLI_300_conda(
         self, name, command, action, options, req_scheme, add_kwargs
     ):
         with patch.object(env.CondaEnvironment, "__init__", return_value=None) as init:
@@ -362,7 +423,7 @@ class TestCli(unittest.TestCase):
     @parameterized.parameterized.expand(
         _generate_combinations(commands=["remove"], env_types=["conda"])
     )
-    def test_PV_CLI_210_conda(
+    def test_PV_CLI_310_conda(
         self, name, command, action, options, req_scheme, add_kwargs
     ):
         with patch.object(env.CondaEnvironment, "__init__", return_value=None) as init:
@@ -376,7 +437,7 @@ class TestCli(unittest.TestCase):
     @parameterized.parameterized.expand(
         _generate_combinations(commands=["replace"], env_types=["conda"])
     )
-    def test_PV_CLI_220_conda(
+    def test_PV_CLI_320_conda(
         self, name, command, action, options, req_scheme, add_kwargs
     ):
         with patch.object(env.CondaEnvironment, "__init__", return_value=None) as init:
@@ -387,7 +448,7 @@ class TestCli(unittest.TestCase):
         init.assert_called_once_with(req_scheme, **kwargs)
         action_method.assert_called_once_with()
 
-    def test_PV_CLI_230_conda_remove_minimal(self):
+    def test_PV_CLI_330_conda_remove_minimal(self):
         with ctx.capture(
             cli.main, "python-venv", "remove", "-t", "conda", "--dry-run"
         ) as (status, _stdout, stderr):
@@ -414,7 +475,7 @@ class TestCli(unittest.TestCase):
             ("conda_frozen", "conda", "frozen", {}),
         ]
     )
-    def test_PV_CLI_300_create_missing_req(self, name, env_type, req_scheme, filespecs):
+    def test_PV_CLI_400_create_missing_req(self, name, env_type, req_scheme, filespecs):
         req_files = {
             "plain": ["requirements.txt"],
             "dev": ["requirements_dev.txt"],
