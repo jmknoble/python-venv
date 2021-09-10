@@ -296,7 +296,7 @@ class ReqScheme(object):
         )
         if self.dry_run:
             wheelfile = self._format("{name}-{version}-*.whl")
-            wheelfile = os.path.join("DISTDIR", wheelfile)
+            wheelfile = os.path.join(const.DIST_DIR_PLACEHOLDER, wheelfile)
         else:
             match = re.search(REGEX_BDIST_WHEEL_WHEELFILE, output)
             if not match:
