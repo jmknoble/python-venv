@@ -29,6 +29,9 @@ Python packages.
 - [Installing Requirements](#installing-requirements)
     - [Opinionation and Devplus Requirements](#opinionation-and-devplus-requirements)
     - [Names and Some Flexibility](#names-and-some-flexibility)
+- [Python Interpreter](#python-interpreter)
+    - [Specifying a Python Interpreter](#specifying-a-python-interpreter)
+    - [Specifying a Python Version for Conda Environments](#specifying-a-python-version-for-conda-environments)
 - [Command-line Autocompletion](#command-line-autocompletion)
 - [Backwards-Incompatible Changes](#backwards-incompatible-changes)
     - [Changes to Command-Line Flags](#changes-to-command-line-flags)
@@ -243,6 +246,61 @@ Or, if you are using `venv` environments, if you want your virtual environment
 somewhere besides `.venv`:
 
     python-venv create -t venv -r plain --env-name ~/.venvs/myenv
+
+
+## Python Interpreter
+
+Typical Python setups, with a "system" Python and possibly either an
+[Anaconda][]/[Miniconda][] or a [pyenv][] install, will generally work well
+with **python-venv**, whether you're creating stock [venv][] environments or
+something more esoteric.  But there are times when you may need more control
+over:
+
+- What Python interpreter you use to create [venv][] environments.
+- What the name of the Python interpreter is inside your virtual environment.
+- What Python interpreter version to place into your [conda][] environment.
+
+**python-venv** tries to help with that.
+
+
+### Specifying a Python Interpreter
+
+Use the `--python` option to tell **python-venv** to use a specific Python
+interpreter.  The default is `python3`.
+
+You may supply either a _base command name_, like `python3`, or a _full path_,
+like `/usr/bin/python3`.
+
+If you supply a **base command name**:
+
+- The command is looked for on the PATH, and the first matching command is
+  used for Python commands that create virtual environments (such as `python3
+  -m venv ...`).
+- The base command name is also used to refer to the Python interpreter
+  _inside_ the virtual environment, for running Python commands after the
+  virtual environment has been created (such as `/path/to/your/env/bin/python3
+  -m pip install ...`).
+
+If you supply a **full path**:
+
+- The path is used as-is for Python commands that create virtual environments.
+  For example, `/usr/local/bin/mypython -m venv ...`.
+- The _base command name_ from the full path is used to refer to the Python
+  interpreter inside the virtual environment.  For example,
+  `/path/to/your/env/bin/mypython -m pip install ...`.
+
+
+### Specifying a Python Version for Conda Environments
+
+`conda create` allows (in fact, requires) you to specify a Python version when
+creating a [conda][] environment.  The default is `python=3`, selecting the
+latest Python 3 version available.  If you want more control over that, use
+the `--python-version` option and specify a conda-compatible version.
+
+For example, `--python-version 3.8`.
+
+This option only works with the `create` and `replace` subcommands together
+with the `-c`/`--conda`/`-t conda` option.
 
 
 ## Command-line Autocompletion
