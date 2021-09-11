@@ -17,8 +17,12 @@ class TestEnv_000_General(unittest.TestCase):
     def test_PV_ENV_000_symbols_exist(self):
         _ = const.PYTHON
         _ = const.CONDA
+        _ = const.PYENV
         _ = const.VENV_DIR
         _ = const.DEV_SUFFIX
+        _ = const.DIST_DIR_PLACEHOLDER
+        _ = const.ENV_DIR_PLACEHOLDER
+        _ = const.ENV_TYPES_NAMED
 
 
 class TestEnv_010_BaseVirtualEnvironment(unittest.TestCase):
@@ -106,6 +110,16 @@ class TestEnv_010_BaseVirtualEnvironment(unittest.TestCase):
         x = env.BaseVirtualEnvironment("dummy_req_scheme")
         with self.assertRaises(NotImplementedError):
             x.env_dir
+
+    def test_PV_ENV_BAS_051_abstract_env_bin_dir(self):
+        x = env.BaseVirtualEnvironment("dummy_req_scheme")
+        with self.assertRaises(NotImplementedError):
+            x.env_bin_dir
+
+    def test_PV_ENV_BAS_052_abstract_env_python(self):
+        x = env.BaseVirtualEnvironment("dummy_req_scheme")
+        with self.assertRaises(NotImplementedError):
+            x.env_python
 
     def test_PV_ENV_BAS_055_abstract_abs_env_dir(self):
         x = env.BaseVirtualEnvironment("dummy_req_scheme")

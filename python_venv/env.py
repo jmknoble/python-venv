@@ -44,11 +44,12 @@ class BaseVirtualEnvironment(object):
             (optional) If `True`-ish, avoid any prompts.
 
         message_prefix
-            (optional) The prefix to use when printing progress or feedback messages.
+            (optional) The prefix to use when printing progress or feedback
+            messages.
 
         python
-            (optional) The basename of the Python interpreter to use for
-            running Python commands.
+            (optional) The basename of or path to the Python interpreter to use
+            for running Python commands.
 
         os_environ
             (optional) If supplied, a dictionary that replaces
@@ -194,6 +195,33 @@ class BaseVirtualEnvironment(object):
     def env_dir(self):
         """Get the directory where this environment lives."""
         return os.path.join(self.env_prefix, self.env_name)
+
+    @property
+    def env_bin_dir(self):
+        """Get the path to the ``bin`` directory in this environment."""
+        try:
+            self._env_bin_dir
+        except AttributeError:
+            self._env_bin_dir = None
+
+        if self._env_bin_dir is None:
+            self._env_bin_dir = os.path.join(self.env_dir, "bin")
+
+        return self._env_bin_dir
+
+    @property
+    def env_python(self):
+        """Get the path to the Python executable in this environment."""
+        try:
+            self._env_python
+        except AttributeError:
+            self._env_python = None
+
+        if self._env_python is None:
+            self._env_python = os.path.join(
+                self.env_bin_dir, os.path.basename(self.python)
+            )
+        return self._env_python
 
     @property
     def abs_env_dir(self):
@@ -350,12 +378,9 @@ class VenvEnvironment(BaseVirtualEnvironment):
         verb = "Would have created" if self.dry_run else "Created"
         self.progress(f"{verb} {self.abs_env_dir}", suffix=None)
 
-        self.env_bin_dir = os.path.join(self.env_dir, "bin")
-        self.env_python = os.path.join(self.env_bin_dir, self.python)
         self.env_activate = os.path.join(self.env_bin_dir, "activate")
 
         self.progress(f"Installing {self.req_scheme} requirements")
-
         venv_requirements = reqs.ReqScheme(
             reqs.REQ_SCHEME_VENV,
             python=self.env_python,
@@ -478,11 +503,7 @@ class PyenvEnvironment(BaseVirtualEnvironment):
         verb = "Would have created" if self.dry_run else "Created"
         self.progress(f"{verb} {self.env_name}", suffix=None)
 
-        self.env_bin_dir = os.path.join(self.env_dir, "bin")
-        self.env_python = os.path.join(self.env_bin_dir, self.python)
-
         self.progress(f"Installing {self.req_scheme} requirements")
-
         venv_requirements = reqs.ReqScheme(
             reqs.REQ_SCHEME_VENV,
             python=self.env_python,
@@ -639,9 +660,6 @@ class CondaEnvironment(BaseVirtualEnvironment):
             stdout=sys.stdout,
             stderr=sys.stderr,
         )
-
-        self.env_bin_dir = os.path.join(self.env_dir, "bin")  # raises if not found
-        self.env_python = os.path.join(self.env_bin_dir, self.python)
 
         self.progress(f"Installing {self.req_scheme} requirements")
 

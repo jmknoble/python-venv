@@ -117,6 +117,92 @@ class TestEnv_100_VenvEnvironment(unittest.TestCase):
 
     @parameterized.parameterized.expand(
         [
+            ("default", None, None, os.path.join(".venv", "bin")),
+            ("specified", "dummy-env", None, os.path.join("dummy-env", "bin")),
+            (
+                "with_prefix",
+                None,
+                "dummy-prefix",
+                os.path.join("dummy-prefix", ".venv", "bin"),
+            ),
+            (
+                "specified_with_prefix",
+                "dummy-env",
+                "dummy-prefix",
+                os.path.join("dummy-prefix", "dummy-env", "bin"),
+            ),
+        ]
+    )
+    def test_PV_ENV_VNV_051_env_bin_dir(self, name, env_name, env_prefix, expected):
+        kwargs = {}
+        if env_name is not None:
+            kwargs["env_name"] = env_name
+        if env_prefix is not None:
+            kwargs["env_prefix"] = env_prefix
+        x = env.VenvEnvironment("dummy_req_scheme", **kwargs)
+        self.assertEqual(x.env_bin_dir, expected)
+
+    @parameterized.parameterized.expand(
+        [
+            (
+                "default",
+                "dummy-python",
+                None,
+                None,
+                os.path.join(".venv", "bin", "dummy-python"),
+            ),
+            (
+                "specified",
+                "dummy-python",
+                "dummy-env",
+                None,
+                os.path.join("dummy-env", "bin", "dummy-python"),
+            ),
+            (
+                "with_prefix",
+                "dummy-python",
+                None,
+                "dummy-prefix",
+                os.path.join("dummy-prefix", ".venv", "bin", "dummy-python"),
+            ),
+            (
+                "specified_with_prefix",
+                "dummy-python",
+                "dummy-env",
+                "dummy-prefix",
+                os.path.join("dummy-prefix", "dummy-env", "bin", "dummy-python"),
+            ),
+            (
+                "with_path",
+                os.path.join(os.sep, "usr", "bin", "dummy-python"),
+                None,
+                None,
+                os.path.join(".venv", "bin", "dummy-python"),
+            ),
+            (
+                "specified_with_path",
+                os.path.join(os.sep, "usr", "bin", "dummy-python"),
+                "dummy-env",
+                None,
+                os.path.join("dummy-env", "bin", "dummy-python"),
+            ),
+        ]
+    )
+    def test_PV_ENV_VNV_052_env_python(
+        self, name, python, env_name, env_prefix, expected
+    ):
+        kwargs = {}
+        if python is not None:
+            kwargs["python"] = python
+        if env_name is not None:
+            kwargs["env_name"] = env_name
+        if env_prefix is not None:
+            kwargs["env_prefix"] = env_prefix
+        x = env.VenvEnvironment("dummy_req_scheme", **kwargs)
+        self.assertEqual(x.env_python, expected)
+
+    @parameterized.parameterized.expand(
+        [
             ("default", None, None, os.path.join(os.getcwd(), ".venv")),
             ("specified", "dummy-env", None, os.path.join(os.getcwd(), "dummy-env")),
             (

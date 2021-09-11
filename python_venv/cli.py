@@ -248,10 +248,10 @@ def _add_venv_arguments(argparser, req_scheme_required=False, **_kwargs):
         action="store",
         default=None,
         help=(
-            "Name of (or path to) virtual environment "
-            "(default: '.venv' for venv environments, or "
-            "inferred from BASENAME for pyenv and conda "
-            "environments)"
+            f"Name of (or path to) virtual environment "
+            f"(default: '{const.VENV_DIR}' for venv environments, "
+            f"or inferred from BASENAME for pyenv and conda "
+            f"environments)"
         ),
     )
 
@@ -271,6 +271,19 @@ def _add_force_arguments(argparser, **_kwargs):
         "--force",
         action="store_true",
         help="Do not prompt for confirmation",
+    )
+    return argparser
+
+
+def _add_python_arguments(argparser, **_kwargs):
+    argparser.add_argument(
+        "--python",
+        action="store",
+        default=const.PYTHON,
+        help=(
+            f"Python interpreter to use when creating virtual environment "
+            f"(either a name or a full path; default: {const.PYTHON})"
+        ),
     )
     return argparser
 
@@ -334,7 +347,7 @@ def _get_virtual_env(args):
     kwargs = {
         "dry_run": args.dry_run,
         "force": args.force,
-        "python": const.PYTHON,
+        "python": args.python,
         "basename": args.basename,
         "env_name": args.env_name,
         "pip_args": args.other_args,
@@ -412,8 +425,11 @@ def _populate_command_actions(commands, prog):
             _add_force_arguments,
         ]
     for command in VENV_CREATE_COMMANDS:
-        commands[command][add_arguments_funcs].append(
-            _add_python_version_arguments,
+        commands[command][add_arguments_funcs].extend(
+            [
+                _add_python_arguments,
+                _add_python_version_arguments,
+            ]
         )
     commands[COMMAND_COMPLETION][add_arguments_funcs] = [_add_completion_arguments]
 
