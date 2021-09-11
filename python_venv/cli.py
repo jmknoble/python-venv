@@ -347,7 +347,7 @@ def _get_virtual_env(args):
     kwargs = {
         "dry_run": args.dry_run,
         "force": args.force,
-        "python": args.python,
+        "python": getattr(args, "python", const.PYTHON),
         "basename": args.basename,
         "env_name": args.env_name,
         "pip_args": args.other_args,
