@@ -426,7 +426,7 @@ class PyenvEnvironment(BaseVirtualEnvironment):
     """
     Model a `pyenv-virtualenv`_ virtual environment.
 
-    .. _ https://github.com/pyenv/pyenv-virtualenv
+    .. _pyenv-virtualenv: https://github.com/pyenv/pyenv-virtualenv
     """
 
     @property
