@@ -29,6 +29,7 @@ Python packages.
 - [Installing Requirements](#installing-requirements)
     - [Opinionation and Devplus Requirements](#opinionation-and-devplus-requirements)
     - [Names and Some Flexibility](#names-and-some-flexibility)
+    - [Changing the Current Directory](#changing-the-current-directory)
 - [Python Interpreter](#python-interpreter)
     - [Specifying a Python Interpreter](#specifying-a-python-interpreter)
     - [Specifying a Python Version for Conda Environments](#specifying-a-python-version-for-conda-environments)
@@ -110,8 +111,8 @@ the above methods.
 ## Quick Start
 
 Create a Python virtual environment using [venv][] at `.venv` for the Python
-project in the current directory, using `requirements.txt` as the list of
-requirements:
+source project in the current directory, using `requirements.txt` as the list
+of requirements:
 
     python-venv create -t venv -r plain
 
@@ -119,8 +120,8 @@ Remove that virtual enviroment:
 
     python-venv remove -t venv
 
-Create a [conda][] virtual environment named after the Python project in the
-current directory using `requirements.txt`:
+Create a [conda][] virtual environment named after the Python source project
+in the current directory using `requirements.txt`:
 
     python-venv create -t conda -r plain
 
@@ -129,7 +130,8 @@ Remove that [conda][] environment:
     python-venv remove -t conda -r plain
 
 Create a [pyenv-virtualenv][] environment for development, named after the
-Python project in the current directory, and using `requirements_dev.txt`:
+Python source project in the current directory, and using
+`requirements_dev.txt`:
 
     python-venv create -t pyenv -r dev
 
@@ -163,17 +165,18 @@ what to install into a virtual environment ("requirement schemes"):
 - **Plain** -- using a `requirements.txt` file.
 - **Frozen** -- using frozen requirements (from `pip freeze`) in a
   `requirements_frozen.txt` file.
-- **Package** -- using the name of the Python project in the current directory
-  as a package to `pip install`.
+- **Package** -- using the name of the Python source project in the current
+  directory as a package to `pip install`.
 - **Pip** -- using the additional arguments on the command line as arguments
   to `pip install`.
-- **Source** -- using the Python project in the current directory as a thing
-  to install via `python3 setup.py install`.
-- **Wheel** -- using the Python project in the current directory as a thing
-  to build via `python3 setup.py bdist_wheel` and then installing the result.
+- **Source** -- using the Python source project in the current directory as a
+  thing to install via `python3 setup.py install`.
+- **Wheel** -- using the Python source project in the current directory as a
+  thing to build via `python3 setup.py bdist_wheel` and then installing the
+  result.
 - **Dev** -- using a `requirements_dev.txt` file.
 - **Devplus** -- using a combination of requirements files to install packages
-  as a development environment for the Python project in the current
+  as a development environment for the Python source project in the current
   directory.
 
 These schemes correspond roughly to the following:
@@ -197,6 +200,7 @@ These schemes correspond roughly to the following:
 > _Prior to v0.7.0, the `-P` command-line argument meant `--package`.  Now it
 > means `--pip`._
 
+
 ### Opinionation and Devplus Requirements
 
 **python-venv** creates `devplus` environments from the following requirements
@@ -218,9 +222,9 @@ likely it may not work well for everyone.
 Part of **python-venv**'s purpose in life is to create or re-create Python
 environments in a predictable way using a single command.
 
-The default "base name" comes from the Python project in the current directory
-(`python3 setup.py --name`), with underscores replaced by hyphens (that is,
-`python-venv` for this Python project).
+The default "base name" comes from the Python source project in the current
+directory (`python3 setup.py --name`), with underscores replaced by hyphens
+(that is, `python-venv` for this Python project).
 
 This base name is used for:
 
@@ -246,6 +250,15 @@ Or, if you are using `venv` environments, if you want your virtual environment
 somewhere besides `.venv`:
 
     python-venv create -t venv -r plain --env-name ~/.venvs/myenv
+
+
+### Changing the Current Directory
+
+If the place you're running `python-venv` from is not the spot where the
+Python source project is that you want to act on, you can tell `python-venv`
+to change directories before doing anything using the `-C`/`--cd` option:
+
+    python-venv create -t venv -r plain --cd /some/other/dir
 
 
 ## Python Interpreter

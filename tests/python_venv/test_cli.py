@@ -31,6 +31,7 @@ def _generate_combinations(
         "wheel",
     )
     basenames = (None, "dummy-basename")
+    cwds = (None, ".")
     env_names = (None, "dummy-env")
     forces = (False, True)
     python_versions = (None, "1.2.3")
@@ -48,6 +49,7 @@ def _generate_combinations(
             "env_type": "-t",
             "requirements": "-r",
             "basename": "-b",
+            "cd": "-C",
             "env_name": "-e",
             "dry_run": "-n",
             "force": "-f",
@@ -57,6 +59,7 @@ def _generate_combinations(
             "env_type": "--type",
             "requirements": "--requirements",
             "basename": "--basename",
+            "cd": "--cd",
             "env_name": "--env-name",
             "dry_run": "--dry-run",
             "force": "--force",
@@ -108,6 +111,7 @@ def _generate_combinations(
         env_types,
         requirements,
         basenames,
+        cwds,
         env_names,
         forces,
         python_versions,
@@ -120,6 +124,7 @@ def _generate_combinations(
         env_type,
         req,
         basename,
+        cwd,
         env_name,
         force,
         python_version,
@@ -148,6 +153,10 @@ def _generate_combinations(
         if basename:
             name_parts.append("basename")
             args.extend([these_opts["basename"], basename])
+
+        if cwd:
+            name_parts.append("cd")
+            args.extend([these_opts["cd"], cwd])
 
         if env_name:
             name_parts.append("env_name")
@@ -311,7 +320,8 @@ class TestCli(unittest.TestCase):
     ):
         with patch.object(env.VenvEnvironment, "__init__", return_value=None) as init:
             with patch.object(env.VenvEnvironment, action) as action_method:
-                cli.main("python-venv", command, *options)
+                with ctx.capture_output():
+                    cli.main("python-venv", command, *options)
         kwargs = {"python": "python3"}
         kwargs.update(add_kwargs)
         init.assert_called_once_with(req_scheme, **kwargs)
@@ -325,7 +335,8 @@ class TestCli(unittest.TestCase):
     ):
         with patch.object(env.VenvEnvironment, "__init__", return_value=None) as init:
             with patch.object(env.VenvEnvironment, action) as action_method:
-                cli.main("python-venv", command, *options)
+                with ctx.capture_output():
+                    cli.main("python-venv", command, *options)
         kwargs = {"python": "python3"}
         kwargs.update(add_kwargs)
         init.assert_called_once_with(req_scheme, **kwargs)
@@ -339,7 +350,8 @@ class TestCli(unittest.TestCase):
     ):
         with patch.object(env.VenvEnvironment, "__init__", return_value=None) as init:
             with patch.object(env.VenvEnvironment, action) as action_method:
-                cli.main("python-venv", command, *options)
+                with ctx.capture_output():
+                    cli.main("python-venv", command, *options)
         kwargs = {"python": "python3"}
         kwargs.update(add_kwargs)
         init.assert_called_once_with(req_scheme, **kwargs)
@@ -361,7 +373,8 @@ class TestCli(unittest.TestCase):
     ):
         with patch.object(env.PyenvEnvironment, "__init__", return_value=None) as init:
             with patch.object(env.PyenvEnvironment, action) as action_method:
-                cli.main("python-venv", command, *options)
+                with ctx.capture_output():
+                    cli.main("python-venv", command, *options)
         kwargs = {"python": "python3"}
         kwargs.update(add_kwargs)
         init.assert_called_once_with(req_scheme, **kwargs)
@@ -375,7 +388,8 @@ class TestCli(unittest.TestCase):
     ):
         with patch.object(env.PyenvEnvironment, "__init__", return_value=None) as init:
             with patch.object(env.PyenvEnvironment, action) as action_method:
-                cli.main("python-venv", command, *options)
+                with ctx.capture_output():
+                    cli.main("python-venv", command, *options)
         kwargs = {"python": "python3"}
         kwargs.update(add_kwargs)
         init.assert_called_once_with(req_scheme, **kwargs)
@@ -389,7 +403,8 @@ class TestCli(unittest.TestCase):
     ):
         with patch.object(env.PyenvEnvironment, "__init__", return_value=None) as init:
             with patch.object(env.PyenvEnvironment, action) as action_method:
-                cli.main("python-venv", command, *options)
+                with ctx.capture_output():
+                    cli.main("python-venv", command, *options)
         kwargs = {"python": "python3"}
         kwargs.update(add_kwargs)
         init.assert_called_once_with(req_scheme, **kwargs)
@@ -418,7 +433,8 @@ class TestCli(unittest.TestCase):
     ):
         with patch.object(env.CondaEnvironment, "__init__", return_value=None) as init:
             with patch.object(env.CondaEnvironment, action) as action_method:
-                cli.main("python-venv", command, *options)
+                with ctx.capture_output():
+                    cli.main("python-venv", command, *options)
         kwargs = {"python": "python3"}
         kwargs.update(add_kwargs)
         init.assert_called_once_with(req_scheme, **kwargs)
@@ -432,7 +448,8 @@ class TestCli(unittest.TestCase):
     ):
         with patch.object(env.CondaEnvironment, "__init__", return_value=None) as init:
             with patch.object(env.CondaEnvironment, action) as action_method:
-                cli.main("python-venv", command, *options)
+                with ctx.capture_output():
+                    cli.main("python-venv", command, *options)
         kwargs = {"python": "python3"}
         kwargs.update(add_kwargs)
         init.assert_called_once_with(req_scheme, **kwargs)
@@ -446,7 +463,8 @@ class TestCli(unittest.TestCase):
     ):
         with patch.object(env.CondaEnvironment, "__init__", return_value=None) as init:
             with patch.object(env.CondaEnvironment, action) as action_method:
-                cli.main("python-venv", command, *options)
+                with ctx.capture_output():
+                    cli.main("python-venv", command, *options)
         kwargs = {"python": "python3"}
         kwargs.update(add_kwargs)
         init.assert_called_once_with(req_scheme, **kwargs)

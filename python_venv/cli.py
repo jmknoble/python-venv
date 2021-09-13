@@ -1,6 +1,7 @@
 """Provide a command-line interface for `~python_venv`:py:mod:."""
 
 import argparse
+import os
 import re
 import sys
 
@@ -10,7 +11,16 @@ except ModuleNotFoundError:
     # Enable running without autocompletion
     pass
 
-from . import argparsing, completion, const, env, exceptions, get_version, reqs
+from . import (
+    argparsing,
+    completion,
+    const,
+    env,
+    exceptions,
+    get_version,
+    reqs,
+    runcommand,
+)
 
 COMMAND_CREATE = "create"
 COMMAND_REMOVE = "remove"
@@ -111,6 +121,15 @@ def _add_venv_arguments(argparser, req_scheme_required=False, **_kwargs):
             f"(default: the result of '{const.PYTHON} setup.py --name', with "
             f"underscores replaced by hyphens)"
         ),
+    )
+
+    argparser.add_argument(
+        "-C",
+        "--cd",
+        metavar="DIR",
+        action="store",
+        default=None,
+        help="Change directory to DIR before performing any actions",
     )
 
     req_scheme_group = argparser.add_argument_group(title="requirements options")
@@ -476,6 +495,14 @@ def main(*argv):
                 f"sense with '-r {args.req_scheme}' (consider using "
                 f"'-r {reqs.REQ_SCHEME_PIP}'?)"
             )
+
+        if getattr(args, "cd", None):
+            runcommand.print_trace(
+                [f"Changing directory to {args.cd} ..."],
+                trace_prefix=const.MESSAGE_PREFIX,
+                dry_run=args.dry_run,
+            )
+            os.chdir(args.cd)
 
         try:
             if args.func is not None:
