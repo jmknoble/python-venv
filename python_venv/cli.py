@@ -18,6 +18,7 @@ from . import (
     env,
     exceptions,
     get_version,
+    osenv,
     reqs,
     runcommand,
 )
@@ -506,7 +507,8 @@ def main(*argv):
 
         try:
             if args.func is not None:
-                return args.func(prog, args)
+                with osenv.clean_os_environ():
+                    return args.func(prog, args)
 
         except exceptions.MissingRequirementsError as e:
             message = "{msg}: {args}".format(msg=e.args[0], args=", ".join(e.args[1]))
