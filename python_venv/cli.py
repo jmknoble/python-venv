@@ -492,6 +492,9 @@ def main(*argv):
         argparser.print_usage()
         sys.exit(const.STATUS_HELP)  # Same behavior as argparse usage messages
 
+    if hasattr(args, "other_args") and args.other_args and args.other_args[0] == "--":
+        args.other_args = args.other_args[1:]  # Slice operation removes leading '--'
+
     try:
         if (
             hasattr(args, "req_scheme")

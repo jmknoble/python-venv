@@ -37,6 +37,8 @@ def _generate_combinations(
     forces = (False, True)
     python_versions = (None, "1.2.3")
     dry_runs = (False, True)
+    pip_argses = ([], ["dummy-pypi-package"], ["--", "-r", "dummy-requirements.txt"])
+    pip_args_names = ("argsnone", "argspkg", "argsdashes")
     actions = {
         "create": "create",
         "new": "create",
@@ -117,6 +119,7 @@ def _generate_combinations(
         forces,
         python_versions,
         dry_runs,
+        zip(pip_args_names, pip_argses),
         opt_types,
     )
 
@@ -130,6 +133,7 @@ def _generate_combinations(
         force,
         python_version,
         dry_run,
+        pip_args,
         opt_type,
     ) in variations:
         name_parts = [command, env_type, req]
@@ -181,8 +185,17 @@ def _generate_combinations(
             name_parts.append("dry_run")
             args.append(these_opts["dry_run"])
 
+        (pip_args_name, pip_args) = pip_args
+        if req in {"pip"}:
+            name_parts.append(pip_args_name)
+            args.extend(pip_args)
+            if pip_args and pip_args[0] == "--":
+                pip_args = pip_args[1:]
+        elif pip_args:
+            continue  # anything but empty pip_args doesn't make sense without --pip
+
         add_kwargs = {
-            "pip_args": [],
+            "pip_args": pip_args,
             "basename": basename,
             "env_name": env_name,
             "dry_run": dry_run,

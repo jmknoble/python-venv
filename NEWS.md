@@ -26,6 +26,8 @@
 - Support choosing `pyenv` Python version via `--python-version`.
 - Support setting default values for `--python` and `--python-version` via
   environment variables.
+- BUGFIX: Avoid passing leading dashes (`--`) to pip when using
+  `-P`/`--pip`/`-t pip` and additonal arguments.
 
 ## v0.9.x
 

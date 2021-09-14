@@ -200,6 +200,13 @@ These schemes correspond roughly to the following:
 > _Prior to v0.7.0, the `-P` command-line argument meant `--package`.  Now it
 > means `--pip`._
 
+> :star: ***HINT:***
+> _When using `--pip`, to keep **python-venv** from misinterpreting
+> **pip** requirements as options, Use plain dashes (`--`) as the first
+> additional argument on the command line.  For example:_
+>
+>     python-venv create -t venv -r pip -e .venv -- -r my-requirements.txt
+
 
 ### Opinionation and Devplus Requirements
 
@@ -330,8 +337,7 @@ This option only works with the `create` and `replace` subcommands (a Python
 interpreter is not invoked when removing environments), and only for `conda`
 and `pyenv` environments.  
 
-> :star: ***HINT***
->
+> :star: ***HINT:***
 > _Use the `--python` option if you need to select a specific Python version
 > for `venv` environments._
 
