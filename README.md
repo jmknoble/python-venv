@@ -302,6 +302,12 @@ If you supply a **full path**:
   interpreter inside the virtual environment.  For example,
   `/path/to/your/env/bin/mypython -m pip install ...`.
 
+You may choose a different default value for `--python` by setting the
+`PYTHON_VENV_USE_PYTHON` environment variable.  For example, with the Bash
+shell:
+
+    export PYTHON_VENV_USE_PYTHON=/usr/local/bin/mypython
+
 
 ### Specifying a Python Version
 
@@ -324,10 +330,16 @@ This option only works with the `create` and `replace` subcommands (a Python
 interpreter is not invoked when removing environments), and only for `conda`
 and `pyenv` environments.  
 
-> :star: ***HINT:***
+> :star: ***HINT***
 >
 > _Use the `--python` option if you need to select a specific Python version
 > for `venv` environments._
+
+You may choose a default value for for `--python-version` by setting the
+`PYTHON_VENV_USE_PYTHON_VERSION` environment variable.  For example, with the
+Bash shell:
+
+    export PYTHON_VENV_USE_PYTHON=3.9.7
 
 
 ## Command-line Autocompletion

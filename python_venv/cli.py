@@ -299,10 +299,11 @@ def _add_python_arguments(argparser, **_kwargs):
     argparser.add_argument(
         "--python",
         action="store",
-        default=const.PYTHON,
+        default=os.environ.get(const.ENV_VAR_USE_PYTHON, const.PYTHON),
         help=(
             f"Python interpreter to use when creating virtual environment "
-            f"(either a name or a full path; default: {const.PYTHON})"
+            f"(either a name or a full path, default: {const.PYTHON}; "
+            f"or set {const.ENV_VAR_USE_PYTHON})"
         ),
     )
     return argparser
@@ -313,8 +314,11 @@ def _add_python_version_arguments(argparser, **_kwargs):
         "--python-version",
         metavar="VERSION",
         action="store",
-        default=None,
-        help="Python version to use when creating conda or pyenv environment",
+        default=os.environ.get(const.ENV_VAR_USE_PYTHON_VERSION, None),
+        help=(
+            f"Python version to use when creating conda or pyenv environment "
+            f"(or set {const.ENV_VAR_USE_PYTHON_VERSION})"
+        ),
     )
     return argparser
 
@@ -461,7 +465,6 @@ def _populate_command_actions(commands, prog):
 def main(*argv):
     """Do the thing."""
     (prog, argv) = argparsing.grok_argv(argv)
-    # TODO: Set some options from environment if not present on command line
     argparser = argparsing.setup_argparse(
         prog=prog,
         description=DESCRIPTION_MAIN,

@@ -24,6 +24,8 @@
   `create`/`remove`/`replace`.
 - Clean up OS environment before running subprocesses.
 - Support choosing `pyenv` Python version via `--python-version`.
+- Support setting default values for `--python` and `--python-version` via
+  environment variables.
 
 ## v0.9.x
 

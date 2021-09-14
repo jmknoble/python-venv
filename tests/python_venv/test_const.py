@@ -21,6 +21,8 @@ class TestConst(unittest.TestCase):
         _ = const.STATUS_HELP
         _ = const.PYTHON
         _ = const.PYTHON_VERSION_REGEX
+        _ = const.ENV_VAR_USE_PYTHON
+        _ = const.ENV_VAR_USE_PYTHON_VERSION
         _ = const.CONDA
         _ = const.PYENV
         _ = const.PYENV_VERSION
