@@ -10,13 +10,6 @@ set -u
 
 ENV_NAME="${ENV_NAME:-python-venv}"
 VENV_DIR="${VENV_DIR:-${HOME}/.venvs}"
-USE_PYTHON="${USE_PYTHON:-/usr/bin/python3}"
-
-case "${USE_PYTHON}" in
-    none|default)
-        USE_PYTHON=""
-        ;;
-esac
 
 set -x
 
@@ -26,5 +19,4 @@ mkdir -p "${VENV_DIR}"
     -t venv \
     -r wheel \
     -e "${VENV_DIR}/${ENV_NAME}" \
-    ${USE_PYTHON:+--python "${USE_PYTHON}"} \
     ${1:+"$@"}
