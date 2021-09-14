@@ -311,10 +311,10 @@ def _add_python_arguments(argparser, **_kwargs):
 def _add_python_version_arguments(argparser, **_kwargs):
     argparser.add_argument(
         "--python-version",
-        metavar="X.Y",
+        metavar="VERSION",
         action="store",
         default=None,
-        help="Python version to use when creating conda environment",
+        help="Python version to use when creating conda or pyenv environment",
     )
     return argparser
 
@@ -351,15 +351,18 @@ def _add_version_arguments(prog, argparser, **_kwargs):
 
 def _check_create_args(args):
     if args.python_version is not None:
-        if args.env_type != const.ENV_TYPE_CONDA:
+        if args.env_type not in const.ENV_TYPES_VERSIONED:
             raise RuntimeError(
-                "'--python-version' only makes sense with '--type conda'"
+                f"'--python-version' does not make sense with '--type {args.env_type}'"
             )
-        if re.match(const.PYTHON_VERSION_REGEX, args.python_version) is None:
+        if (
+            args.env_type in const.ENV_TYPES_VERSIONED_STRICT
+            and re.match(const.PYTHON_VERSION_REGEX, args.python_version) is None
+        ):
             raise RuntimeError(
                 f"--python-version: {args.python_version}: must start with a "
                 "major, major.minor, or major.minor.micro version "
-                "(example: --python-version 3.9)"
+                "(example: --python-version 3.9) for --type {args.env_type}"
             )
 
 
@@ -367,10 +370,11 @@ def _get_virtual_env(args):
     kwargs = {
         "dry_run": args.dry_run,
         "force": args.force,
-        "python": getattr(args, "python", const.PYTHON),
+        "pip_args": args.other_args,
         "basename": args.basename,
         "env_name": args.env_name,
-        "pip_args": args.other_args,
+        "python": getattr(args, "python", const.PYTHON),
+        "os_environ": getattr(args, "os_environ", None),
     }
     try:
         if args.python_version is not None:
@@ -457,6 +461,7 @@ def _populate_command_actions(commands, prog):
 def main(*argv):
     """Do the thing."""
     (prog, argv) = argparsing.grok_argv(argv)
+    # TODO: Set some options from environment if not present on command line
     argparser = argparsing.setup_argparse(
         prog=prog,
         description=DESCRIPTION_MAIN,
@@ -507,8 +512,8 @@ def main(*argv):
 
         try:
             if args.func is not None:
-                with osenv.clean_os_environ():
-                    return args.func(prog, args)
+                args.os_environ = osenv.get_clean_environ()
+                return args.func(prog, args)
 
         except exceptions.MissingRequirementsError as e:
             message = "{msg}: {args}".format(msg=e.args[0], args=", ".join(e.args[1]))

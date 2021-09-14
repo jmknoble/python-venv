@@ -22,6 +22,8 @@
 
 - Add `-C`/`--cd` option to change to a different directory before performing
   `create`/`remove`/`replace`.
+- Clean up OS environment before running subprocesses.
+- Support choosing `pyenv` Python version via `--python-version`.
 
 ## v0.9.x
 

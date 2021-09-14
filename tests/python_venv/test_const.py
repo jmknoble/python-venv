@@ -23,6 +23,7 @@ class TestConst(unittest.TestCase):
         _ = const.PYTHON_VERSION_REGEX
         _ = const.CONDA
         _ = const.PYENV
+        _ = const.PYENV_VERSION
         _ = const.VENV_DIR
         _ = const.DEV_SUFFIX
         _ = const.MESSAGE_PREFIX
@@ -33,6 +34,8 @@ class TestConst(unittest.TestCase):
         _ = const.ENV_TYPE_CONDA
         _ = const.ENV_TYPES
         _ = const.ENV_TYPES_NAMED
+        _ = const.ENV_TYPES_VERSIONED
+        _ = const.ENV_TYPES_VERSIONED_STRICT
         _ = const.FROM_FILES
         _ = const.FROM_PACKAGES
         _ = const.FROM_COMMANDS

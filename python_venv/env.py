@@ -103,7 +103,7 @@ class BaseVirtualEnvironment(object):
             self.python = const.PYTHON
 
         if self.os_environ is None:
-            self.os_environ = os.environ
+            self.os_environ = os.environ.copy()
 
     def progress(self, message, suffix="..."):
         """Print a progress message."""
@@ -235,6 +235,10 @@ class BaseVirtualEnvironment(object):
             "This is an abstract base class, please inherit from it."
         )
 
+    def progress_start(self):
+        """Emit a progress message when starting any activity."""
+        pass
+
     def preflight_checks_for_create(self):
         """Run preflight checks needed before creating this environment."""
         if not self.ignore_preflight_checks:
@@ -258,6 +262,7 @@ class BaseVirtualEnvironment(object):
 
     def pre_create(self):
         """Do needed things before creating the environment (abstract method)."""
+        self.progress_start()
         self.progress_create()
         self.preflight_checks_for_create()
         self.check_preexisting()
@@ -285,6 +290,7 @@ class BaseVirtualEnvironment(object):
 
     def pre_remove(self):
         """Do needed things before removing the environment (abstract method)."""
+        self.progress_start()
         self.progress_remove()
 
     def do_remove(self):
@@ -309,6 +315,7 @@ class BaseVirtualEnvironment(object):
 
     def pre_replace(self):
         """Do needed things before replacing the environment (abstract method)."""
+        self.progress_start()
         self.progress_replace()
         self.preflight_checks_for_create()
 
@@ -427,7 +434,22 @@ class PyenvEnvironment(BaseVirtualEnvironment):
     Model a `pyenv-virtualenv`_ virtual environment.
 
     .. _pyenv-virtualenv: https://github.com/pyenv/pyenv-virtualenv
+
+    Args:
+        python_version
+            A string containing the version of the Python interpreter to place
+            into the resulting environment (default: `None`).
+
+    See Also:
+        base/parent class
     """
+
+    def __init__(self, *args, **kwargs):
+        self.python_version = kwargs.pop("python_version", None)
+        super(PyenvEnvironment, self).__init__(*args, **kwargs)
+
+        if self.python_version is not None:
+            self.os_environ[const.PYENV_VERSION] = self.python_version
 
     @property
     def env_name(self):
@@ -476,6 +498,11 @@ class PyenvEnvironment(BaseVirtualEnvironment):
         if self._env_description is None:
             self._env_description = f"pyenv environment {self.env_name}"
         return self._env_description
+
+    def progress_start(self):
+        """Emit a progress message when starting any activity."""
+        if self.python_version is not None:
+            self.progress(f"Setting {const.PYENV_VERSION}={self.python_version}")
 
     def env_exists(self):
         """Tell whether this environment already exists."""

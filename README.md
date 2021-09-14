@@ -32,7 +32,7 @@ Python packages.
     - [Changing the Current Directory](#changing-the-current-directory)
 - [Python Interpreter](#python-interpreter)
     - [Specifying a Python Interpreter](#specifying-a-python-interpreter)
-    - [Specifying a Python Version for Conda Environments](#specifying-a-python-version-for-conda-environments)
+    - [Specifying a Python Version](#specifying-a-python-version)
 - [Command-line Autocompletion](#command-line-autocompletion)
 - [Backwards-Incompatible Changes](#backwards-incompatible-changes)
     - [Changes to Command-Line Flags](#changes-to-command-line-flags)
@@ -303,17 +303,31 @@ If you supply a **full path**:
   `/path/to/your/env/bin/mypython -m pip install ...`.
 
 
-### Specifying a Python Version for Conda Environments
+### Specifying a Python Version
 
 `conda create` allows (in fact, requires) you to specify a Python version when
 creating a [conda][] environment.  The default is `python=3`, selecting the
 latest Python 3 version available.  If you want more control over that, use
-the `--python-version` option and specify a conda-compatible version.
+the `--python-version` option and specify a conda-compatible version.  For
+example:
 
-For example, `--python-version 3.8`.
+    python-venv create --conda --python-version 3.8 ...
 
-This option only works with the `create` and `replace` subcommands together
-with the `-c`/`--conda`/`-t conda` option.
+`pyenv` also allows choosing a Python version to run.  When creating a `pyenv`
+environment, you can use the `--python-version` option to choose one of the
+versions listed by `pyenv versions`.  Examples:
+
+    python-venv create --pyenv --python-version 3.9.7 ...
+    python-venv create --pyenv --python-version system ...
+
+This option only works with the `create` and `replace` subcommands (a Python
+interpreter is not invoked when removing environments), and only for `conda`
+and `pyenv` environments.  
+
+> :star: ***HINT:***
+>
+> _Use the `--python` option if you need to select a specific Python version
+> for `venv` environments._
 
 
 ## Command-line Autocompletion

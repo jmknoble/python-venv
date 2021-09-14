@@ -9,6 +9,7 @@ PYTHON_VERSION_REGEX = r"^[0-9]+(\.[0-9]+){0,2}"  # Must start with X, X.Y, or X
 
 CONDA = "conda"
 PYENV = "pyenv"
+PYENV_VERSION = "PYENV_VERSION"
 VENV_DIR = ".venv"
 DEV_SUFFIX = "-dev"
 
@@ -29,6 +30,15 @@ ENV_TYPES = [
 
 ENV_TYPES_NAMED = [
     ENV_TYPE_PYENV,
+    ENV_TYPE_CONDA,
+]
+
+ENV_TYPES_VERSIONED = [
+    ENV_TYPE_PYENV,
+    ENV_TYPE_CONDA,
+]
+
+ENV_TYPES_VERSIONED_STRICT = [
     ENV_TYPE_CONDA,
 ]
 

@@ -2,13 +2,14 @@
 
 import argparse
 import itertools
+import os
 import os.path
 import unittest
 from unittest.mock import patch
 
 import parameterized  # https://pypi.org/project/parameterized/
 
-from python_venv import cli, env
+from python_venv import cli, const, env, osenv
 from tests.python_venv import contextmgr as ctx
 
 ########################################
@@ -166,7 +167,11 @@ def _generate_combinations(
             name_parts.append("force")
             args.append(these_opts["force"])
 
-        if python_version and env_type == "conda" and action in {"create", "replace"}:
+        if (
+            python_version
+            and env_type in const.ENV_TYPES_VERSIONED
+            and action in {"create", "replace"}
+        ):
             name_parts.append("pyver")
             args.extend([these_opts["python_version"], python_version])
         else:
@@ -205,7 +210,10 @@ def _generate_combinations(
 
 class TestCli(unittest.TestCase):
     def setUp(self):
-        pass
+        self.kwargs = {
+            "python": "python3",
+            "os_environ": osenv.get_clean_environ(),
+        }
 
     def tearDown(self):
         pass
@@ -289,8 +297,7 @@ class TestCli(unittest.TestCase):
         [
             ("venv_invalid_raises", "venv", "invalid_python_version", True),
             ("venv_valid_raises", "venv", "1.2.3", True),
-            ("pyenv_invalid_raises", "pyenv", "invalid_python_version", True),
-            ("pyenv_valid_raises", "pyenv", "1.2.3", True),
+            ("pyenv_does_not_raise", "pyenv", "dummy-python-version", False),
             ("conda_invalid_raises", "conda", "invalid_python_version", True),
             ("conda_major_only", "conda", "1", False),
             ("conda_major_minor", "conda", "1.2", False),
@@ -322,7 +329,7 @@ class TestCli(unittest.TestCase):
             with patch.object(env.VenvEnvironment, action) as action_method:
                 with ctx.capture_output():
                     cli.main("python-venv", command, *options)
-        kwargs = {"python": "python3"}
+        kwargs = self.kwargs.copy()
         kwargs.update(add_kwargs)
         init.assert_called_once_with(req_scheme, **kwargs)
         action_method.assert_called_once_with()
@@ -337,7 +344,7 @@ class TestCli(unittest.TestCase):
             with patch.object(env.VenvEnvironment, action) as action_method:
                 with ctx.capture_output():
                     cli.main("python-venv", command, *options)
-        kwargs = {"python": "python3"}
+        kwargs = self.kwargs.copy()
         kwargs.update(add_kwargs)
         init.assert_called_once_with(req_scheme, **kwargs)
         action_method.assert_called_once_with()
@@ -352,7 +359,7 @@ class TestCli(unittest.TestCase):
             with patch.object(env.VenvEnvironment, action) as action_method:
                 with ctx.capture_output():
                     cli.main("python-venv", command, *options)
-        kwargs = {"python": "python3"}
+        kwargs = self.kwargs.copy()
         kwargs.update(add_kwargs)
         init.assert_called_once_with(req_scheme, **kwargs)
         action_method.assert_called_once_with()
@@ -375,7 +382,7 @@ class TestCli(unittest.TestCase):
             with patch.object(env.PyenvEnvironment, action) as action_method:
                 with ctx.capture_output():
                     cli.main("python-venv", command, *options)
-        kwargs = {"python": "python3"}
+        kwargs = self.kwargs.copy()
         kwargs.update(add_kwargs)
         init.assert_called_once_with(req_scheme, **kwargs)
         action_method.assert_called_once_with()
@@ -390,7 +397,7 @@ class TestCli(unittest.TestCase):
             with patch.object(env.PyenvEnvironment, action) as action_method:
                 with ctx.capture_output():
                     cli.main("python-venv", command, *options)
-        kwargs = {"python": "python3"}
+        kwargs = self.kwargs.copy()
         kwargs.update(add_kwargs)
         init.assert_called_once_with(req_scheme, **kwargs)
         action_method.assert_called_once_with()
@@ -405,7 +412,7 @@ class TestCli(unittest.TestCase):
             with patch.object(env.PyenvEnvironment, action) as action_method:
                 with ctx.capture_output():
                     cli.main("python-venv", command, *options)
-        kwargs = {"python": "python3"}
+        kwargs = self.kwargs.copy()
         kwargs.update(add_kwargs)
         init.assert_called_once_with(req_scheme, **kwargs)
         action_method.assert_called_once_with()
@@ -435,7 +442,7 @@ class TestCli(unittest.TestCase):
             with patch.object(env.CondaEnvironment, action) as action_method:
                 with ctx.capture_output():
                     cli.main("python-venv", command, *options)
-        kwargs = {"python": "python3"}
+        kwargs = self.kwargs.copy()
         kwargs.update(add_kwargs)
         init.assert_called_once_with(req_scheme, **kwargs)
         action_method.assert_called_once_with()
@@ -450,7 +457,7 @@ class TestCli(unittest.TestCase):
             with patch.object(env.CondaEnvironment, action) as action_method:
                 with ctx.capture_output():
                     cli.main("python-venv", command, *options)
-        kwargs = {"python": "python3"}
+        kwargs = self.kwargs.copy()
         kwargs.update(add_kwargs)
         init.assert_called_once_with(req_scheme, **kwargs)
         action_method.assert_called_once_with()
@@ -465,7 +472,7 @@ class TestCli(unittest.TestCase):
             with patch.object(env.CondaEnvironment, action) as action_method:
                 with ctx.capture_output():
                     cli.main("python-venv", command, *options)
-        kwargs = {"python": "python3"}
+        kwargs = self.kwargs.copy()
         kwargs.update(add_kwargs)
         init.assert_called_once_with(req_scheme, **kwargs)
         action_method.assert_called_once_with()
