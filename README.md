@@ -29,6 +29,8 @@ Python packages.
 - [Installing Requirements](#installing-requirements)
     - [Opinionation and Devplus Requirements](#opinionation-and-devplus-requirements)
     - [Names and Some Flexibility](#names-and-some-flexibility)
+    - [Basenames](#basenames)
+    - [Environment Names](#environment-names)
     - [Changing the Current Directory](#changing-the-current-directory)
 - [Python Interpreter](#python-interpreter)
     - [Specifying a Python Interpreter](#specifying-a-python-interpreter)
@@ -156,6 +158,14 @@ Display command-line help:
 Use the `-t` or `--env-type` option to say what type of virtual environment to
 create or remove.
 
+> :pushpin: ***NOTE:***
+>
+> **Python-venv** can create "anonymous" `venv` environments in a predictably
+> named folder under the current directory, or `named-venv` environments in a
+> dedicated directory and named after the Python source project in the current
+> directory.  See [Names and Some Flexibility](#names-and-some-flexibility)
+> for more about this.
+
 
 ## Installing Requirements
 
@@ -226,37 +236,59 @@ likely it may not work well for everyone.
 
 ### Names and Some Flexibility
 
-Part of **python-venv**'s purpose in life is to create or re-create Python
-environments in a predictable way using a single command.
+**Python-venv**'s main purpose in life is to create or re-create Python
+environments in a predictable way using a single command.  It uses one of two
+approaches or *naming schemes:*
 
-The default "base name" comes from the Python source project in the current
-directory (`python3 setup.py --name`), with underscores replaced by hyphens
-(that is, `python-venv` for this Python project).
+- *Anonymous* environments with a predictable name in the current directory.
+- *Named* environments in a dedicated directory and named using a *basename*.
 
-This base name is used for:
+Which naming scheme **python-venv** uses depends on the environment type:
 
-- The name of non-`dev` [conda][] and [pyenv][] environments as-is.
-- The name of `dev` and `devplus` [conda][] and [pyenv][] environments with a
-  `-dev` suffix (`python-venv-dev`).
+| Environment Type | Naming Scheme | Example |
+|------------------|----------|---------|
+| venv | anonymous | `./.venv` |
+| named-venv | named | `~/.venvs/python-venv` |
+| conda | named | `<CONDA_PREFIX>/envs/python-venv` |
+| pyenv | named | `<PYENV_ROOT>/<VERSION>/envs/python-venv` |
+
+
+### Basenames
+
+In the named environment examples above, `python-venv` is the *basename*.  The
+default basename comes from the Python source project in the current directory
+(`python3 setup.py --name`), with underscores replaced by hyphens (for this
+Python project, that works out to `python-venv`).
+
+The basename is used for:
+
+- The name of non-`dev` named environments as-is.
+- The name of `dev` and `devplus` named environments, with a `-dev` suffix
+  added (`python-venv-dev`).
 - The name of the Python package to install for `package` environments.
 
-You can choose your own base name using the `--basename` option; this will
+You can choose your own basename using the `--basename` option; this will
 keep **python-env** from trying to use `setup.py` to find the name:
 
-    python-venv create -t conda -r dev --basename python-venv-0.1.0
+    python-venv create -t named-venv -r dev --basename python-venv-0.1.0
     python-venv create -t pyenv -r plain --basename requirements-test
     python-venv create -t venv -r package --basename mypackage
+
+
+### Environment Names
 
 You can also choose your own environment name using the `--env-name` option if
 you want a different environment name:
 
     python-venv create -t conda -r plain --env-name myenv
     python-venv create -t pyenv -r dev --env-name myenv-development
+    python-venv create -t named-venv -r devplus --venvs-dir ~/.venvs-dev --env-name myenv
 
 Or, if you are using `venv` environments, if you want your virtual environment
 somewhere besides `.venv`:
 
-    python-venv create -t venv -r plain --env-name ~/.venvs/myenv
+    python-venv create -t venv -r plain --env-name .python-env
+    python-venv create -t venv -r plain --env-name /path/to/myenv
 
 
 ### Changing the Current Directory
