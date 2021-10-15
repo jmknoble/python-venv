@@ -14,6 +14,15 @@ from tests.python_venv import contextmgr as ctx
 
 ########################################
 
+_ENV_CLASSES = {
+    "venv": env.VenvEnvironment,
+    "named-venv": env.NamedVenvEnvironment,
+    "pyenv": env.PyenvEnvironment,
+    "conda": env.CondaEnvironment,
+}
+
+########################################
+
 
 def _generate_combinations(
     commands=None, env_types=None, requirements=None, action=None
@@ -32,6 +41,7 @@ def _generate_combinations(
         "wheel",
     )
     basenames = (None, "dummy-basename")
+    venvs_dirs = (None, "dummy-venvs-dir")
     cwds = (None, ".")
     env_names = (None, "dummy-env")
     forces = (False, True)
@@ -52,6 +62,7 @@ def _generate_combinations(
             "env_type": "-t",
             "requirements": "-r",
             "basename": "-b",
+            "venvs_dir": "-V",
             "cd": "-C",
             "env_name": "-e",
             "dry_run": "-n",
@@ -62,6 +73,7 @@ def _generate_combinations(
             "env_type": "--type",
             "requirements": "--requirements",
             "basename": "--basename",
+            "venvs_dir": "--venvs-dir",
             "cd": "--cd",
             "env_name": "--env-name",
             "dry_run": "--dry-run",
@@ -72,6 +84,7 @@ def _generate_combinations(
     abbrevs = {
         "abbrev_short": {
             "venv": "-v",
+            "named-venv": "-N",
             "pyenv": "-y",
             "conda": "-c",
             "plain": "-p",
@@ -85,6 +98,7 @@ def _generate_combinations(
         },
         "abbrev_long": {
             "venv": "--venv",
+            "named-venv": "--named-venv",
             "pyenv": "--pyenv",
             "conda": "--conda",
             "plain": "--plain",
@@ -114,6 +128,7 @@ def _generate_combinations(
         env_types,
         requirements,
         basenames,
+        venvs_dirs,
         cwds,
         env_names,
         forces,
@@ -128,6 +143,7 @@ def _generate_combinations(
         env_type,
         req,
         basename,
+        venvs_dir,
         cwd,
         env_name,
         force,
@@ -136,7 +152,7 @@ def _generate_combinations(
         pip_args,
         opt_type,
     ) in variations:
-        name_parts = [command, env_type, req]
+        name_parts = [command, env_type.replace("-", "_"), req]
 
         fallback_opt_type = opt_type.replace("abbrev_", "")
         these_opts = opts.get(opt_type, opts.get(fallback_opt_type)).copy()
@@ -158,6 +174,10 @@ def _generate_combinations(
         if basename:
             name_parts.append("basename")
             args.extend([these_opts["basename"], basename])
+
+        if venvs_dir and env_type in {const.ENV_TYPE_NAMED_VENV}:
+            name_parts.append("venvsdir")
+            args.extend([these_opts["venvs_dir"], venvs_dir])
 
         if cwd:
             name_parts.append("cd")
@@ -203,6 +223,12 @@ def _generate_combinations(
         }
         if python_version:
             add_kwargs["python_version"] = python_version
+        if env_type in {const.ENV_TYPE_NAMED_VENV}:
+            add_kwargs["env_prefix"] = os.path.expanduser(
+                venvs_dir
+                if venvs_dir
+                else os.environ.get(const.ENV_VAR_VENVS_DIR, const.DEFAULT_VENVS_DIR)
+            )
 
         name_parts.append(opt_type)
         name = "_".join(name_parts)
@@ -213,6 +239,7 @@ def _generate_combinations(
             action,
             args,
             req,
+            env_type,
             add_kwargs,
         )
 
@@ -221,7 +248,7 @@ def _generate_combinations(
 # Tests
 
 
-class TestCli(unittest.TestCase):
+class TestCli_000_Base(unittest.TestCase):
     def setUp(self):
         self.kwargs = {
             "python": "python3",
@@ -310,6 +337,8 @@ class TestCli(unittest.TestCase):
         [
             ("venv_invalid_raises", "venv", "invalid_python_version", True),
             ("venv_valid_raises", "venv", "1.2.3", True),
+            ("named_venv_invalid_raises", "named-venv", "invalid_python_version", True),
+            ("named_venv_valid_raises", "named-venv", "1.2.3", True),
             ("pyenv_does_not_raise", "pyenv", "dummy-python-version", False),
             ("conda_invalid_raises", "conda", "invalid_python_version", True),
             ("conda_major_only", "conda", "1", False),
@@ -330,15 +359,45 @@ class TestCli(unittest.TestCase):
         else:
             cli._check_create_args(args)
 
+    @parameterized.parameterized.expand(
+        [
+            ("named_venv_does_not_raise", "named-venv", "dummy-venvs-dir", False),
+            ("venv_raises", "venv", "dummy-venvs-dir", True),
+            ("pyenv_raises", "pyenv", "dummy-venvs-dir", True),
+            ("conda_raises", "conda", "dummy-venvs-dir", True),
+        ]
+    )
+    def test_PV_CLI_040_check_venvs_dir(self, name, env_type, venvs_dir, should_raise):
+        args = argparse.Namespace(env_type=env_type, venvs_dir=venvs_dir)
+        if should_raise:
+            with self.assertRaises(RuntimeError):
+                cli._check_venv_dir_args(args)
+        else:
+            cli._check_venv_dir_args(args)
+
     ####################
 
+
+class TestCli_100_Venv_Create(unittest.TestCase):
+    def setUp(self):
+        self.kwargs = {
+            "python": "python3",
+            "os_environ": osenv.get_clean_environ(),
+        }
+
+    def tearDown(self):
+        pass
+
     @parameterized.parameterized.expand(
-        _generate_combinations(commands=["create", "new"], env_types=["venv"])
+        _generate_combinations(
+            commands=["create", "new"], env_types=["venv", "named-venv"]
+        )
     )
     def test_PV_CLI_100_venv(
-        self, name, command, action, options, req_scheme, add_kwargs
+        self, name, command, action, options, req_scheme, env_type, add_kwargs
     ):
-        with patch.object(env.VenvEnvironment, "__init__", return_value=None) as init:
+        this_class = _ENV_CLASSES[env_type]
+        with patch.object(this_class, "__init__", return_value=None) as init:
             with patch.object(env.VenvEnvironment, action) as action_method:
                 with ctx.capture_output():
                     cli.main("python-venv", command, *options)
@@ -347,13 +406,27 @@ class TestCli(unittest.TestCase):
         init.assert_called_once_with(req_scheme, **kwargs)
         action_method.assert_called_once_with()
 
+
+class TestCli_110_Venv_Remove(unittest.TestCase):
+    def setUp(self):
+        self.kwargs = {
+            "python": "python3",
+            "os_environ": osenv.get_clean_environ(),
+        }
+
+    def tearDown(self):
+        pass
+
     @parameterized.parameterized.expand(
-        _generate_combinations(commands=["remove", "rm"], env_types=["venv"])
+        _generate_combinations(
+            commands=["remove", "rm"], env_types=["venv", "named-venv"]
+        )
     )
     def test_PV_CLI_110_venv(
-        self, name, command, action, options, req_scheme, add_kwargs
+        self, name, command, action, options, req_scheme, env_type, add_kwargs
     ):
-        with patch.object(env.VenvEnvironment, "__init__", return_value=None) as init:
+        this_class = _ENV_CLASSES[env_type]
+        with patch.object(this_class, "__init__", return_value=None) as init:
             with patch.object(env.VenvEnvironment, action) as action_method:
                 with ctx.capture_output():
                     cli.main("python-venv", command, *options)
@@ -362,13 +435,27 @@ class TestCli(unittest.TestCase):
         init.assert_called_once_with(req_scheme, **kwargs)
         action_method.assert_called_once_with()
 
+
+class TestCli_120_Venv_Replace(unittest.TestCase):
+    def setUp(self):
+        self.kwargs = {
+            "python": "python3",
+            "os_environ": osenv.get_clean_environ(),
+        }
+
+    def tearDown(self):
+        pass
+
     @parameterized.parameterized.expand(
-        _generate_combinations(commands=["replace", "rpl"], env_types=["venv"])
+        _generate_combinations(
+            commands=["replace", "rpl"], env_types=["venv", "named-venv"]
+        )
     )
     def test_PV_CLI_120_venv(
-        self, name, command, action, options, req_scheme, add_kwargs
+        self, name, command, action, options, req_scheme, env_type, add_kwargs
     ):
-        with patch.object(env.VenvEnvironment, "__init__", return_value=None) as init:
+        this_class = _ENV_CLASSES[env_type]
+        with patch.object(this_class, "__init__", return_value=None) as init:
             with patch.object(env.VenvEnvironment, action) as action_method:
                 with ctx.capture_output():
                     cli.main("python-venv", command, *options)
@@ -376,6 +463,17 @@ class TestCli(unittest.TestCase):
         kwargs.update(add_kwargs)
         init.assert_called_once_with(req_scheme, **kwargs)
         action_method.assert_called_once_with()
+
+
+class TestCli_130_Venv_Remove_Extra(unittest.TestCase):
+    def setUp(self):
+        self.kwargs = {
+            "python": "python3",
+            "os_environ": osenv.get_clean_environ(),
+        }
+
+    def tearDown(self):
+        pass
 
     def test_PV_CLI_130_venv_remove_minimal(self):
         with ctx.capture(
@@ -383,31 +481,68 @@ class TestCli(unittest.TestCase):
         ) as (status, _stdout, _stderr):
             self.assertEqual(status, 0)
 
+    def test_PV_CLI_140_named_venv_remove_minimal(self):
+        with ctx.capture_to_file(
+            cli.main, "python-venv", "remove", "-t", "named-venv", "--dry-run"
+        ) as (status, _stdout, stderr):
+            self.assertEqual(status, 1)
+            self.assertIn(
+                (
+                    "error: Please supply either the '-e/--env-name' "
+                    "or '-r/--requirements' option"
+                ),
+                stderr,
+            )
+
     ####################
+
+
+class TestCli_200_Pyenv_Create(unittest.TestCase):
+    def setUp(self):
+        self.kwargs = {
+            "python": "python3",
+            "os_environ": osenv.get_clean_environ(),
+        }
+
+    def tearDown(self):
+        pass
 
     @parameterized.parameterized.expand(
         _generate_combinations(commands=["create", "new"], env_types=["pyenv"])
     )
     def test_PV_CLI_200_pyenv(
-        self, name, command, action, options, req_scheme, add_kwargs
+        self, name, command, action, options, req_scheme, env_type, add_kwargs
     ):
-        with patch.object(env.PyenvEnvironment, "__init__", return_value=None) as init:
-            with patch.object(env.PyenvEnvironment, action) as action_method:
+        this_class = _ENV_CLASSES[env_type]
+        with patch.object(this_class, "__init__", return_value=None) as init:
+            with patch.object(this_class, action) as action_method:
                 with ctx.capture_output():
                     cli.main("python-venv", command, *options)
         kwargs = self.kwargs.copy()
         kwargs.update(add_kwargs)
         init.assert_called_once_with(req_scheme, **kwargs)
         action_method.assert_called_once_with()
+
+
+class TestCli_210_Pyenv_Remove(unittest.TestCase):
+    def setUp(self):
+        self.kwargs = {
+            "python": "python3",
+            "os_environ": osenv.get_clean_environ(),
+        }
+
+    def tearDown(self):
+        pass
 
     @parameterized.parameterized.expand(
         _generate_combinations(commands=["remove", "rm"], env_types=["pyenv"])
     )
     def test_PV_CLI_210_pyenv(
-        self, name, command, action, options, req_scheme, add_kwargs
+        self, name, command, action, options, req_scheme, env_type, add_kwargs
     ):
-        with patch.object(env.PyenvEnvironment, "__init__", return_value=None) as init:
-            with patch.object(env.PyenvEnvironment, action) as action_method:
+        this_class = _ENV_CLASSES[env_type]
+        with patch.object(this_class, "__init__", return_value=None) as init:
+            with patch.object(this_class, action) as action_method:
                 with ctx.capture_output():
                     cli.main("python-venv", command, *options)
         kwargs = self.kwargs.copy()
@@ -415,20 +550,43 @@ class TestCli(unittest.TestCase):
         init.assert_called_once_with(req_scheme, **kwargs)
         action_method.assert_called_once_with()
 
+
+class TestCli_220_Pyenv_Replace(unittest.TestCase):
+    def setUp(self):
+        self.kwargs = {
+            "python": "python3",
+            "os_environ": osenv.get_clean_environ(),
+        }
+
+    def tearDown(self):
+        pass
+
     @parameterized.parameterized.expand(
         _generate_combinations(commands=["replace", "rpl"], env_types=["pyenv"])
     )
     def test_PV_CLI_220_pyenv(
-        self, name, command, action, options, req_scheme, add_kwargs
+        self, name, command, action, options, req_scheme, env_type, add_kwargs
     ):
-        with patch.object(env.PyenvEnvironment, "__init__", return_value=None) as init:
-            with patch.object(env.PyenvEnvironment, action) as action_method:
+        this_class = _ENV_CLASSES[env_type]
+        with patch.object(this_class, "__init__", return_value=None) as init:
+            with patch.object(this_class, action) as action_method:
                 with ctx.capture_output():
                     cli.main("python-venv", command, *options)
         kwargs = self.kwargs.copy()
         kwargs.update(add_kwargs)
         init.assert_called_once_with(req_scheme, **kwargs)
         action_method.assert_called_once_with()
+
+
+class TestCli_230_Pyenv_Remove_Extra(unittest.TestCase):
+    def setUp(self):
+        self.kwargs = {
+            "python": "python3",
+            "os_environ": osenv.get_clean_environ(),
+        }
+
+    def tearDown(self):
+        pass
 
     def test_PV_CLI_230_pyenv_remove_minimal(self):
         with ctx.capture_to_file(
@@ -445,29 +603,53 @@ class TestCli(unittest.TestCase):
 
     ####################
 
+
+class TestCli_300_Conda_Create(unittest.TestCase):
+    def setUp(self):
+        self.kwargs = {
+            "python": "python3",
+            "os_environ": osenv.get_clean_environ(),
+        }
+
+    def tearDown(self):
+        pass
+
     @parameterized.parameterized.expand(
         _generate_combinations(commands=["create", "new"], env_types=["conda"])
     )
     def test_PV_CLI_300_conda(
-        self, name, command, action, options, req_scheme, add_kwargs
+        self, name, command, action, options, req_scheme, env_type, add_kwargs
     ):
-        with patch.object(env.CondaEnvironment, "__init__", return_value=None) as init:
-            with patch.object(env.CondaEnvironment, action) as action_method:
+        this_class = _ENV_CLASSES[env_type]
+        with patch.object(this_class, "__init__", return_value=None) as init:
+            with patch.object(this_class, action) as action_method:
                 with ctx.capture_output():
                     cli.main("python-venv", command, *options)
         kwargs = self.kwargs.copy()
         kwargs.update(add_kwargs)
         init.assert_called_once_with(req_scheme, **kwargs)
         action_method.assert_called_once_with()
+
+
+class TestCli_310_Conda_Remove(unittest.TestCase):
+    def setUp(self):
+        self.kwargs = {
+            "python": "python3",
+            "os_environ": osenv.get_clean_environ(),
+        }
+
+    def tearDown(self):
+        pass
 
     @parameterized.parameterized.expand(
         _generate_combinations(commands=["remove", "rm"], env_types=["conda"])
     )
     def test_PV_CLI_310_conda(
-        self, name, command, action, options, req_scheme, add_kwargs
+        self, name, command, action, options, req_scheme, env_type, add_kwargs
     ):
-        with patch.object(env.CondaEnvironment, "__init__", return_value=None) as init:
-            with patch.object(env.CondaEnvironment, action) as action_method:
+        this_class = _ENV_CLASSES[env_type]
+        with patch.object(this_class, "__init__", return_value=None) as init:
+            with patch.object(this_class, action) as action_method:
                 with ctx.capture_output():
                     cli.main("python-venv", command, *options)
         kwargs = self.kwargs.copy()
@@ -475,20 +657,43 @@ class TestCli(unittest.TestCase):
         init.assert_called_once_with(req_scheme, **kwargs)
         action_method.assert_called_once_with()
 
+
+class TestCli_320_Conda_Replace(unittest.TestCase):
+    def setUp(self):
+        self.kwargs = {
+            "python": "python3",
+            "os_environ": osenv.get_clean_environ(),
+        }
+
+    def tearDown(self):
+        pass
+
     @parameterized.parameterized.expand(
         _generate_combinations(commands=["replace", "rpl"], env_types=["conda"])
     )
     def test_PV_CLI_320_conda(
-        self, name, command, action, options, req_scheme, add_kwargs
+        self, name, command, action, options, req_scheme, env_type, add_kwargs
     ):
-        with patch.object(env.CondaEnvironment, "__init__", return_value=None) as init:
-            with patch.object(env.CondaEnvironment, action) as action_method:
+        this_class = _ENV_CLASSES[env_type]
+        with patch.object(this_class, "__init__", return_value=None) as init:
+            with patch.object(this_class, action) as action_method:
                 with ctx.capture_output():
                     cli.main("python-venv", command, *options)
         kwargs = self.kwargs.copy()
         kwargs.update(add_kwargs)
         init.assert_called_once_with(req_scheme, **kwargs)
         action_method.assert_called_once_with()
+
+
+class TestCli_330_Conda_Remove_Extra(unittest.TestCase):
+    def setUp(self):
+        self.kwargs = {
+            "python": "python3",
+            "os_environ": osenv.get_clean_environ(),
+        }
+
+    def tearDown(self):
+        pass
 
     def test_PV_CLI_330_conda_remove_minimal(self):
         with ctx.capture(
@@ -504,6 +709,17 @@ class TestCli(unittest.TestCase):
             )
 
     ####################
+
+
+class TestCli_400_Extra(unittest.TestCase):
+    def setUp(self):
+        self.kwargs = {
+            "python": "python3",
+            "os_environ": osenv.get_clean_environ(),
+        }
+
+    def tearDown(self):
+        pass
 
     @parameterized.parameterized.expand(
         [

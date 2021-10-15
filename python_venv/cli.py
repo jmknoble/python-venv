@@ -123,6 +123,17 @@ def _add_venv_arguments(argparser, req_scheme_required=False, **_kwargs):
             f"underscores replaced by hyphens)"
         ),
     )
+    argparser.add_argument(
+        "-V",
+        "--venvs-dir",
+        action="store",
+        default=None,
+        help=(
+            f"Path to directory in which to create '{const.ENV_TYPE_NAMED_VENV}' "
+            f"environments (default: the value of the {const.ENV_VAR_VENVS_DIR} "
+            f"environment variable, or '{const.DEFAULT_VENVS_DIR}' if not set)"
+        ),
+    )
 
     argparser.add_argument(
         "-C",
@@ -246,6 +257,14 @@ def _add_venv_arguments(argparser, req_scheme_required=False, **_kwargs):
         help=f"Same as '--type {const.ENV_TYPE_VENV}'",
     )
     venv_mutex_group.add_argument(
+        "-N",
+        f"--{const.ENV_TYPE_NAMED_VENV}",
+        action="store_const",
+        dest="env_type",
+        const=const.ENV_TYPE_NAMED_VENV,
+        help=f"Same as '--type {const.ENV_TYPE_NAMED_VENV}'",
+    )
+    venv_mutex_group.add_argument(
         "-y",
         f"--{const.ENV_TYPE_PYENV}",
         action="store_const",
@@ -314,7 +333,7 @@ def _add_python_version_arguments(argparser, **_kwargs):
         "--python-version",
         metavar="VERSION",
         action="store",
-        default=os.environ.get(const.ENV_VAR_USE_PYTHON_VERSION, None),
+        default=None,
         help=(
             f"Python version to use when creating conda or pyenv environment "
             f"(or set {const.ENV_VAR_USE_PYTHON_VERSION})"
@@ -353,14 +372,36 @@ def _add_version_arguments(prog, argparser, **_kwargs):
     return argparser
 
 
+def _check_venv_dir_args(args):
+    args.venvs_dir = None if "venvs_dir" not in args else args.venvs_dir
+    if args.env_type in {const.ENV_TYPE_NAMED_VENV}:
+        args.venvs_dir = (
+            args.venvs_dir
+            if args.venvs_dir is not None
+            else os.environ.get(const.ENV_VAR_VENVS_DIR, const.DEFAULT_VENVS_DIR)
+        )
+    elif args.venvs_dir is not None:
+        raise RuntimeError(
+            f"'--venvs-dir' does not make sense with '--type {args.env_type}'"
+        )
+
+
 def _check_create_args(args):
-    if args.python_version is not None:
-        if args.env_type not in const.ENV_TYPES_VERSIONED:
+    _check_venv_dir_args(args)
+    if args.env_type not in const.ENV_TYPES_VERSIONED:
+        if args.python_version is not None:
             raise RuntimeError(
                 f"'--python-version' does not make sense with '--type {args.env_type}'"
             )
+    else:  # versioned
+        args.python_version = (
+            args.python_version
+            if args.python_version is not None
+            else os.environ.get(const.ENV_VAR_USE_PYTHON_VERSION, None)
+        )
         if (
             args.env_type in const.ENV_TYPES_VERSIONED_STRICT
+            and args.python_version is not None
             and re.match(const.PYTHON_VERSION_REGEX, args.python_version) is None
         ):
             raise RuntimeError(
@@ -368,6 +409,23 @@ def _check_create_args(args):
                 "major, major.minor, or major.minor.micro version "
                 "(example: --python-version 3.9) for --type {args.env_type}"
             )
+
+
+def _check_remove_args(args):
+    _check_venv_dir_args(args)
+    if (
+        args.env_type in const.ENV_TYPES_NAMED
+        # set equivalence
+        and {args.env_name, args.req_scheme} == {None}
+    ):
+        raise RuntimeError(
+            "Please supply either the '-e/--env-name' or '-r/--requirements' "
+            "option so we know the name of the environment to remove."
+        )
+
+
+def _check_replace_args(args):
+    _check_create_args(args)
 
 
 def _get_virtual_env(args):
@@ -380,14 +438,14 @@ def _get_virtual_env(args):
         "python": getattr(args, "python", const.PYTHON),
         "os_environ": getattr(args, "os_environ", None),
     }
-    try:
-        if args.python_version is not None:
-            kwargs["python_version"] = args.python_version
-    except AttributeError:  # args.python_version may not exist
-        pass
+    if "python_version" in args and args.python_version is not None:
+        kwargs["python_version"] = args.python_version
 
     if args.env_type == const.ENV_TYPE_VENV:
         virtual_env = env.VenvEnvironment(args.req_scheme, **kwargs)
+    elif args.env_type == const.ENV_TYPE_NAMED_VENV:
+        kwargs["env_prefix"] = os.path.expanduser(args.venvs_dir)
+        virtual_env = env.NamedVenvEnvironment(args.req_scheme, **kwargs)
     elif args.env_type == const.ENV_TYPE_PYENV:
         virtual_env = env.PyenvEnvironment(args.req_scheme, **kwargs)
     elif args.env_type == const.ENV_TYPE_CONDA:
@@ -403,21 +461,13 @@ def _command_action_create(_prog, args):
 
 
 def _command_action_remove(_prog, args):
-    if (
-        args.env_type in const.ENV_TYPES_NAMED
-        # set equivalence
-        and {args.env_name, args.req_scheme} == {None}
-    ):
-        raise RuntimeError(
-            "Please supply either the '-e/--env-name' or '-r/--requirements' "
-            "option so we know the name of the environment to remove."
-        )
+    _check_remove_args(args)
     _get_virtual_env(args).remove()
     return const.STATUS_SUCCESS
 
 
 def _command_action_replace(_prog, args):
-    _check_create_args(args)
+    _check_replace_args(args)
     _get_virtual_env(args).replace()
     return const.STATUS_SUCCESS
 

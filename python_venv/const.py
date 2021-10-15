@@ -1,5 +1,7 @@
 """Provide package constants."""
 
+import os.path
+
 STATUS_SUCCESS = 0
 STATUS_FAILURE = 1
 STATUS_HELP = 2
@@ -7,8 +9,11 @@ STATUS_HELP = 2
 PYTHON = "python3"
 PYTHON_VERSION_REGEX = r"^[0-9]+(\.[0-9]+){0,2}"  # Must start with X, X.Y, or X.Y.Z
 
+DEFAULT_VENVS_DIR = os.path.join("~", ".venvs")
+
 ENV_VAR_USE_PYTHON = "PYTHON_VENV_USE_PYTHON"
 ENV_VAR_USE_PYTHON_VERSION = "PYTHON_VENV_USE_PYTHON_VERSION"
+ENV_VAR_VENVS_DIR = "PYTHON_VENV_VENVS_DIR"
 
 CONDA = "conda"
 PYENV = "pyenv"
@@ -22,16 +27,19 @@ DIST_DIR_PLACEHOLDER = "<DIST_DIR>"
 ENV_DIR_PLACEHOLDER = "<ENV_DIR>"
 
 ENV_TYPE_VENV = "venv"
+ENV_TYPE_NAMED_VENV = "named-venv"
 ENV_TYPE_PYENV = "pyenv"
 ENV_TYPE_CONDA = "conda"
 
 ENV_TYPES = [
     ENV_TYPE_VENV,
+    ENV_TYPE_NAMED_VENV,
     ENV_TYPE_PYENV,
     ENV_TYPE_CONDA,
 ]
 
 ENV_TYPES_NAMED = [
+    ENV_TYPE_NAMED_VENV,
     ENV_TYPE_PYENV,
     ENV_TYPE_CONDA,
 ]

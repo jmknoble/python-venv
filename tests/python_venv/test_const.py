@@ -21,8 +21,10 @@ class TestConst(unittest.TestCase):
         _ = const.STATUS_HELP
         _ = const.PYTHON
         _ = const.PYTHON_VERSION_REGEX
+        _ = const.DEFAULT_VENVS_DIR
         _ = const.ENV_VAR_USE_PYTHON
         _ = const.ENV_VAR_USE_PYTHON_VERSION
+        _ = const.ENV_VAR_VENVS_DIR
         _ = const.CONDA
         _ = const.PYENV
         _ = const.PYENV_VERSION
@@ -32,6 +34,7 @@ class TestConst(unittest.TestCase):
         _ = const.DIST_DIR_PLACEHOLDER
         _ = const.ENV_DIR_PLACEHOLDER
         _ = const.ENV_TYPE_VENV
+        _ = const.ENV_TYPE_NAMED_VENV
         _ = const.ENV_TYPE_PYENV
         _ = const.ENV_TYPE_CONDA
         _ = const.ENV_TYPES
