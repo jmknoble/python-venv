@@ -451,6 +451,11 @@ class NamedVenvEnvironment(VenvEnvironment):
             )
 
     @property
+    def need_setup_py(self):
+        """Tell whether a setup.py is necessary."""
+        return True  # We always need it for constructing env_name
+
+    @property
     def env_name(self):
         """Get the name for this environment."""
         if self._env_name is None:
@@ -484,6 +489,11 @@ class PyenvEnvironment(BaseVirtualEnvironment):
 
         if self.python_version is not None:
             self.os_environ[const.PYENV_VERSION] = self.python_version
+
+    @property
+    def need_setup_py(self):
+        """Tell whether a setup.py is necessary."""
+        return True  # We always need it for constructing env_name
 
     @property
     def env_name(self):
@@ -626,6 +636,11 @@ class CondaEnvironment(BaseVirtualEnvironment):
         if self.python_version is None:
             self.python_version = "3"
         super(CondaEnvironment, self).__init__(*args, **kwargs)
+
+    @property
+    def need_setup_py(self):
+        """Tell whether a setup.py is necessary."""
+        return True  # We always need it for constructing env_name
 
     @property
     def env_name(self):
