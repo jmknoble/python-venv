@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from __future__ import print_function
 
@@ -238,7 +238,7 @@ def _store_stable_version(version, stable_version_file, dry_run):
             dry_run=dry_run,
         )
         if not dry_run:
-            with open(stable_version_file, "w") as f:
+            with open(stable_version_file, "w", encoding="utf-8") as f:
                 f.write(version + "\n")
         status = runcommand.run_command(
             ["git", "diff", "-s", "--exit-code", stable_version_file],
@@ -281,7 +281,7 @@ def main(*argv):  # pylint: disable=too-many-branches
             _get_project_dir(), DEFAULT_STABLE_VERSION_FILENAME
         )
 
-    with open(args.version_file, "r") as version_file:
+    with open(args.version_file, "r", encoding="utf-8") as version_file:
         bare_project_version = _get_project_version(version_file)
         project_version = "".join(
             [args.tag_prefix, bare_project_version, args.tag_suffix]
