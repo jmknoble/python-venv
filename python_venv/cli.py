@@ -98,7 +98,7 @@ print instructions for enabling autocompletion.
 def _add_subcommands(argparser, commands, dest="command"):
     subcommands = {}
     subparsers = argparser.add_subparsers(title="subcommands", dest=dest)
-    for (command, properties) in commands.items():
+    for command, properties in commands.items():
         subcommands[command] = subparsers.add_parser(
             command,
             aliases=properties.get("aliases", []),
@@ -523,7 +523,7 @@ def main(*argv):
     _add_version_arguments(prog, argparser)
     _populate_command_actions(COMMANDS, prog)
     subcommands = _add_subcommands(argparser, COMMANDS)
-    for (subcommand, subcommand_parser) in subcommands.items():
+    for subcommand, subcommand_parser in subcommands.items():
         kwargs = {"subcommand": subcommand}
         for key in ["req_scheme_required"]:
             if key in COMMANDS[subcommand]:

@@ -143,7 +143,7 @@ def _clean_syspath(syspath, suffix):
             continue
         env_dir = os.path.join(env_dir, suffix)
         indexes = []
-        for (i, path) in enumerate(syspath_parts):
+        for i, path in enumerate(syspath_parts):
             if path == env_dir:
                 indexes.append(i)
         for i in reversed(indexes):
@@ -240,7 +240,7 @@ def project(
             path = _ensure_relative_path(path)
             os.makedirs(os.path.dirname(path), exist_ok=True)
 
-        for (path, contents) in filespecs.items():
+        for path, contents in filespecs.items():
             path = _ensure_relative_path(path)
             os.makedirs(os.path.dirname(path), exist_ok=True)
             with open(path, "w") as f:

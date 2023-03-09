@@ -24,7 +24,7 @@ def clean_syspath(syspath, suffix):
             continue
         env_dir = os.path.join(env_dir, suffix)
         indexes = []
-        for (i, path) in enumerate(syspath_parts):
+        for i, path in enumerate(syspath_parts):
             if path == env_dir:
                 indexes.append(i)
         for i in reversed(indexes):

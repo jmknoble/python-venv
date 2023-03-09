@@ -655,7 +655,7 @@ class TestEnv_420_NamedVenvRemove(unittest.TestCase):
                 with ctx.capture_to_file(x.remove) as (_status, _stdout, stderr):
                     original_stderrs.append(stderr)
                 testable_stderrs = [text.lower() for text in original_stderrs]
-                for (i, text) in enumerate(testable_stderrs):
+                for i, text in enumerate(testable_stderrs):
                     if "error" in text:
                         print(original_stderrs[i], file=stderr)
                     self.assertNotIn("error", text)
@@ -750,7 +750,7 @@ class TestEnv_430_NamedVenvReplace(unittest.TestCase):
                 with ctx.capture_to_file(x.replace) as (_status, _stdout, stderr):
                     original_stderrs.append(stderr)
                 testable_stderrs = [text.lower() for text in original_stderrs]
-                for (i, text) in enumerate(testable_stderrs):
+                for i, text in enumerate(testable_stderrs):
                     if "error" in text:
                         print(original_stderrs[i], file=stderr)
                     self.assertNotIn("error", text)
@@ -845,7 +845,7 @@ class TestEnv_430_NamedVenvReplace(unittest.TestCase):
                 with ctx.capture_to_file(x.remove) as (_status, _stdout, stderr):
                     original_stderrs.append(stderr)
                 testable_stderrs = [text.lower() for text in original_stderrs]
-                for (i, text) in enumerate(testable_stderrs):
+                for i, text in enumerate(testable_stderrs):
                     if "error" in text:
                         print(original_stderrs[i], file=stderr)
                     self.assertNotIn("error", text)
