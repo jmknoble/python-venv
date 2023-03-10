@@ -1,4 +1,4 @@
-"""Provide unit tests for `~python_venv.env`:py:mod:."""
+"""Provide unit tests for `~python_venv.env.named_env`:py:mod:."""
 
 import os
 import os.path
