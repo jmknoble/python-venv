@@ -176,7 +176,13 @@ def _clean_environ_copy(environ):
 
 @contextlib.contextmanager
 def project(
-    package_name, dirs=None, filespecs=None, cleanup=None, omit_setup=False, **kwargs
+    package_name,
+    dirs=None,
+    filespecs=None,
+    cleanup=None,
+    omit_setup=False,
+    omit_readme=False,
+    **kwargs,
 ):
     """
     Set up a mock Python project to create an environment from and change
@@ -209,6 +215,9 @@ def project(
         omit_setup
             (optional) if `True`-ish, omit ``setup.py`` from the project.
 
+        omit_readme
+            (optional) if `True`-ish, omit ``README`` from the project.
+
         kwargs
             (optional) additional keyword arguments used for formatting
             contents of files
@@ -229,6 +238,10 @@ def project(
         if not omit_setup:
             with open("setup.py", "w") as f:
                 f.write(SETUP_TEMPLATE.format(package_name=package_name))
+
+        if not omit_readme:
+            with open("README", "w"):
+                pass  # empty file is ok
 
         package_dir = _ensure_relative_path(package_name)
         os.mkdir(package_dir)

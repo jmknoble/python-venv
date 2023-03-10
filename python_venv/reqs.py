@@ -18,11 +18,12 @@ REQUIREMENTS_PACKAGE = "{basename}"
 
 REQUIREMENTS_SOURCE = ["{python}", "setup.py", "install"]
 
-REQUIREMENTS_CLEAN = ["{python}", "setup.py", "clean", "--all"]
-REQUIREMENTS_BDIST_WHEEL = ["{python}", "setup.py", "bdist_wheel"]
+# https://pypa-build.readthedocs.io/en/stable/index.html
+REQUIREMENTS_BDIST_WHEEL = ["{python}", "-m", "build", "--outdir", const.DIST_DIR]
 REQUIREMENTS_WHEELFILE = "{wheelfile}"
 
 REQUIREMENTS_VENV = ["pip", "setuptools", "wheel"]
+REQUIREMENTS_VENV_WHEEL = ["build"]
 
 REQ_SCHEME_PLAIN = "plain"
 REQ_SCHEME_DEV = "dev"
@@ -80,20 +81,24 @@ REQUIREMENTS = {
         {const.FROM_COMMANDS: [REQUIREMENTS_SOURCE]},
     ],
     REQ_SCHEME_WHEEL: [
-        {const.FROM_COMMANDS: [REQUIREMENTS_CLEAN]},
         {const.FROM_BDIST_WHEEL: REQUIREMENTS_BDIST_WHEEL},
         {const.FROM_PACKAGES: [REQUIREMENTS_WHEELFILE]},
     ],
 }
 
 SPECIAL_REQUIREMENTS = {
-    REQ_SCHEME_VENV: [
-        {const.FROM_PACKAGES: REQUIREMENTS_VENV},
-    ],
+    REQ_SCHEME_VENV: {
+        "default": [
+            {const.FROM_PACKAGES: REQUIREMENTS_VENV},
+        ],
+        REQ_SCHEME_WHEEL: [
+            {const.FROM_PACKAGES: REQUIREMENTS_VENV + REQUIREMENTS_VENV_WHEEL},
+        ],
+    }
 }
 
 REGEX_BDIST_WHEEL_WHEELFILE = (
-    r"(?im)^creating '?(?P<wheelfile>.*\.whl)'? and adding .* to it"
+    r"(?im)^Successfully built [^ ]+ and (?P<wheelfile>.*\.whl)"
 )
 
 
@@ -156,6 +161,7 @@ class ReqScheme(object):
         env=None,
         stdout=None,
         stderr=None,
+        supplemental_scheme=None,
     ):
         self.scheme = scheme
         self.pip_args = [] if pip_args is None else pip_args
@@ -167,6 +173,7 @@ class ReqScheme(object):
         self.env = env
         self.stdout = sys.stdout if stdout is None else stdout
         self.stderr = sys.stderr if stderr is None else stderr
+        self.supplemental_scheme = supplemental_scheme
 
         if self.formatter is None:
             self.formatter = fmt.Formatter(python=self.python, basename=self.basename)
@@ -178,9 +185,15 @@ class ReqScheme(object):
 
     def _get_requirements(self):
         # TODO: Turn this into an @property
-        found = REQUIREMENTS.get(
-            self.scheme, SPECIAL_REQUIREMENTS.get(self.scheme, None)
-        )
+        special = SPECIAL_REQUIREMENTS.get(self.scheme, None)
+        if special:
+            default = special.get("default", None)
+            special = (
+                special.get(self.supplemental_scheme, default)
+                if self.supplemental_scheme
+                else default
+            )
+        found = REQUIREMENTS.get(self.scheme, special)
         if found is None:
             raise KeyError(self.scheme)
         return list(found)
@@ -296,12 +309,12 @@ class ReqScheme(object):
         )
         if self.dry_run:
             wheelfile = self._format("{name}-{version}-*.whl")
-            wheelfile = os.path.join(const.DIST_DIR_PLACEHOLDER, wheelfile)
         else:
             match = re.search(REGEX_BDIST_WHEEL_WHEELFILE, output)
             if not match:
                 raise RuntimeError(f"unable to detect wheelfile: {bdist_wheel_command}")
             wheelfile = match.group("wheelfile")
+        wheelfile = os.path.join(const.DIST_DIR, wheelfile)
         self.formatter.add(wheelfile=wheelfile)
 
     def check(self):

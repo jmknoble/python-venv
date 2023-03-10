@@ -121,6 +121,7 @@ class PyenvEnvironment(BaseVirtualEnvironment):
             python=self.env_python,
             dry_run=self.dry_run,
             env=self.os_environ,
+            supplemental_scheme=self.req_scheme,
         )
         venv_requirements.fulfill(upgrade=True)
 

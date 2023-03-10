@@ -31,7 +31,7 @@ class TestConst(unittest.TestCase):
         _ = const.VENV_DIR
         _ = const.DEV_SUFFIX
         _ = const.MESSAGE_PREFIX
-        _ = const.DIST_DIR_PLACEHOLDER
+        _ = const.DIST_DIR
         _ = const.ENV_DIR_PLACEHOLDER
         _ = const.ENV_TYPE_VENV
         _ = const.ENV_TYPE_NAMED_VENV

@@ -21,7 +21,7 @@ class TestEnv_000_General(unittest.TestCase):
         _ = const.PYENV
         _ = const.VENV_DIR
         _ = const.DEV_SUFFIX
-        _ = const.DIST_DIR_PLACEHOLDER
+        _ = const.DIST_DIR
         _ = const.ENV_DIR_PLACEHOLDER
         _ = const.ENV_TYPES_NAMED
 
