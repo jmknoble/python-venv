@@ -31,7 +31,9 @@
 
 # Logs and output
 *.log
+*.LOG
 *.out
+*.OUT
 
 # Detritus
 .debug
