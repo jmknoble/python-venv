@@ -81,38 +81,48 @@ def capture_output_to_file():
         sys.stderr = orig_stderr
 
 
-SETUP_TEMPLATE = """
-import os.path
-from setuptools import find_packages, setup
+PYPROJECT_TOML_TEMPLATE = """
+[build-system]
+requires = [
+    "setuptools>=51",
+    "wheel"
+]
+build-backend = "setuptools.build_meta"
+"""
 
-SETUP_DIR = os.path.dirname(os.path.realpath(__file__))
+SETUP_PY_TEMPLATE = """
+from setuptools import setup
 
+setup()
+"""
 
-def get_requirements_from_file(dirname, basename, default=None):
-    reqs_path = os.path.join(dirname, basename)
-    if os.path.isfile(reqs_path):
-        with open(reqs_path) as f:
-            return [x for x in (y.strip() for y in f) if not x.startswith("#")]
-    else:
-        return [] if default is None else default
+SETUP_CFG_TEMPLATE = """
+[metadata]
+name = {package_name}
 
+description = {package_name}
+long_description = file: README
+long_description_content_type = text/plain
 
-setup(
-    name="{package_name}",
-    packages=find_packages(
-        include=["*"],
-        exclude=[
-            "build",
-            "dist",
-            "docs",
-            "examples",
-            "tests",
-            "tests.*",
-            "*.egg-info",
-        ]
-    ),
-    install_requires=get_requirements_from_file(SETUP_DIR, "requirements.txt"),
-)
+[options]
+packages = find:
+package_dir =
+    =.
+
+install_requires =
+{requirements}
+
+[options.packages.find]
+include =
+    *
+exclude =
+    build
+    dist
+    docs
+    examples
+    tests
+    tests.*
+    *.egg-info
 """
 
 
@@ -172,6 +182,16 @@ def _clean_environ_copy(environ):
         except KeyError:
             pass
     return environ
+
+
+def _read_requirements_file(filename):
+    requirements = ""
+    if os.path.isfile(filename):
+        with open(filename) as f:
+            requirements = "\n".join(
+                [f"    {x}" for x in (y.strip() for y in f) if not x.startswith("#")]
+            )
+    return requirements
 
 
 @contextlib.contextmanager
@@ -235,14 +255,6 @@ def project(
         temp_dir = tempfile.TemporaryDirectory()
         os.chdir(temp_dir.name)
 
-        if not omit_setup:
-            with open("setup.py", "w") as f:
-                f.write(SETUP_TEMPLATE.format(package_name=package_name))
-
-        if not omit_readme:
-            with open("README", "w"):
-                pass  # empty file is ok
-
         package_dir = _ensure_relative_path(package_name)
         os.mkdir(package_dir)
 
@@ -260,6 +272,22 @@ def project(
                 if kwargs:
                     contents = contents.format(**kwargs)
                 f.write(contents)
+
+        if not omit_setup:
+            expansions = {
+                "package_name": package_name,
+                "requirements": _read_requirements_file("requirements.txt"),
+            }
+            with open("setup.py", "w") as f:
+                f.write(PYPROJECT_TOML_TEMPLATE.format(**expansions))
+            with open("setup.py", "w") as f:
+                f.write(SETUP_PY_TEMPLATE.format(**expansions))
+            with open("setup.cfg", "w") as f:
+                f.write(SETUP_CFG_TEMPLATE.format(**expansions))
+
+        if not omit_readme:
+            with open("README", "w"):
+                pass  # empty file is ok
 
         yield
     finally:
