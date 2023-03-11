@@ -1,4 +1,5 @@
 [build-system]
+# https://setuptools.pypa.io/en/latest/userguide/index.html
 requires = [
     "setuptools>=51",
     "wheel"
