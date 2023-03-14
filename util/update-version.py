@@ -30,17 +30,20 @@ DESCRIPTION = (
     "version if they do not match."
 )
 
-RELEASE_TYPES = [
-    "dev",
-    "a",
-    "alpha",
-    "b",
-    "beta",
-    "c",
-    "pre",
-    "preview",
-    "rc",
-]
+RELEASE_TYPES_ALL = {
+    # release_type: normalized_release_type
+    "dev": "dev",
+    "a": "a",
+    "alpha": "a",
+    "b": "b",
+    "beta": "b",
+    "c": "rc",
+    "pre": "rc",
+    "preview": "rc",
+    "rc": "rc",
+}
+
+RELEASE_TYPES = list(RELEASE_TYPES_ALL)
 
 RELEASE_TYPES_REQUIRING_SEPARATOR = {"dev"}
 
@@ -152,10 +155,9 @@ def main(*argv):
             dry_run=args.dry_run,
         )
     else:
-        sep = "." if args.release_type in RELEASE_TYPES_REQUIRING_SEPARATOR else ""
-        new_version = "".join(
-            [current_version, sep, args.release_type, args.build_number]
-        )
+        release_type = RELEASE_TYPES_ALL[args.release_type]  # normalize release type
+        sep = "." if release_type in RELEASE_TYPES_REQUIRING_SEPARATOR else ""
+        new_version = "".join([current_version, sep, release_type, args.build_number])
         runcommand.print_trace(
             ["Updating current version from", current_version, "to", new_version],
             trace_prefix="",
