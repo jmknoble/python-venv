@@ -61,7 +61,8 @@ Changes](#backwards-incompatible-changes).
 
 The recommended method of installing **python-venv** is to install it into a
 virtual environment.  Currently installation from a wheelfile or from source
-is supported.  Installing from a wheelfile is recommended.
+is supported.  Installing from a wheelfile is recommended; it requires the
+[build][] package in addition to [setuptools][] and [wheel][].
 
 **python-venv** can create the virtual environment and install itself for you.
 For a [venv][] environment:
@@ -169,7 +170,7 @@ create or remove.
 
 ## Installing Requirements
 
-**python-env** understands several different opinionated ways of specifying
+**python-venv** understands several different opinionated ways of specifying
 what to install into a virtual environment ("requirement schemes"):
 
 - **Plain** -- using a `requirements.txt` file.
@@ -268,7 +269,7 @@ The basename is used for:
 - The name of the Python package to install for `package` environments.
 
 You can choose your own basename using the `--basename` option; this will
-keep **python-env** from trying to use `setup.py` to find the name:
+keep **python-venv** from trying to use `setup.py` to find the name:
 
     python-venv create -t named-venv -r dev --basename python-venv-0.1.0
     python-venv create -t pyenv -r plain --basename requirements-test
@@ -377,7 +378,7 @@ You may choose a default value for for `--python-version` by setting the
 `PYTHON_VENV_USE_PYTHON_VERSION` environment variable.  For example, with the
 Bash shell:
 
-    export PYTHON_VENV_USE_PYTHON=3.9.7
+    export PYTHON_VENV_USE_PYTHON_VERSION=3.9.7
 
 
 ## Command-line Autocompletion
@@ -413,6 +414,7 @@ As of v0.7.0, there are a few significant changes to command-line flags:
     - [Managing Multiple Python Versions With pyenv][pyenv-article]
 - [venv][]
 - argcomplete on [PyPI][argcomplete-pypi] and [GitHub][argcomplete-github]
+- build on [PyPI][build]
 
 
  [Anaconda]: https://www.anaconda.com/products/individual
@@ -420,6 +422,7 @@ As of v0.7.0, there are a few significant changes to command-line flags:
  [argcomplete-github]: https://github.com/kislyuk/argcomplete
  [autocompletion]: https://en.wikipedia.org/wiki/Autocomplete
  [Bash]: https://en.wikipedia.org/wiki/Bash_(Unix_shell)
+ [build]: https://pypi.org/project/build/
  [conda]: https://docs.conda.io/en/latest/
  [Miniconda]: https://docs.conda.io/en/latest/miniconda.html
  [NEWS]: NEWS.md
@@ -427,4 +430,6 @@ As of v0.7.0, there are a few significant changes to command-line flags:
  [pyenv]: https://github.com/pyenv/pyenv
  [pyenv-article]: https://realpython.com/intro-to-pyenv/
  [pyenv-virtualenv]: https://github.com/pyenv/pyenv-virtualenv
+ [setuptools]: https://pypi.org/project/setuptools/
+ [wheel]: https://pypi.org/project/wheel/
  [venv]: https://docs.python.org/3/library/venv.html
