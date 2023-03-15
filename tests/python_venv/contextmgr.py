@@ -278,7 +278,7 @@ def project(
                 "package_name": package_name,
                 "requirements": _read_requirements_file("requirements.txt"),
             }
-            with open("setup.py", "w") as f:
+            with open("pyproject.toml", "w") as f:
                 f.write(PYPROJECT_TOML_TEMPLATE.format(**expansions))
             with open("setup.py", "w") as f:
                 f.write(SETUP_PY_TEMPLATE.format(**expansions))
