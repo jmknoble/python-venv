@@ -37,9 +37,7 @@ class TestEnv_010_BaseVirtualEnvironment(unittest.TestCase):
         with self.assertRaises(TypeError) as raised:
             env_base.BaseVirtualEnvironment()
         msg = raised.exception.args[0]
-        self.assertTrue(
-            msg.startswith("__init__() missing 1 required positional argument")
-        )
+        self.assertTrue("__init__() missing 1 required positional argument" in msg)
 
     def test_PV_ENV_BAS_001_instantiate(self):
         x = env_base.BaseVirtualEnvironment("dummy_req_scheme")
