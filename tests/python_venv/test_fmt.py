@@ -88,7 +88,7 @@ class TestFormat(unittest.TestCase):
         x.add(**kwargs)
         self.assertListEqual(x.keys(), expected_keys)
         if expected_keys:
-            for (key, value) in zip(expected_keys, expected_values):
+            for key, value in zip(expected_keys, expected_values):
                 self.assertEqual(x.get(key), value)
 
     def test_PV_FM_051_add_override(self):

@@ -27,6 +27,11 @@ pylint:
     - logging-fstring-interpolation
     - unnecessary-pass
     - useless-object-inheritance
+    - consider-using-f-string
+    - super-with-arguments
+    - consider-using-from-import
+    - raise-missing-from
+    - unspecified-encoding
   options:
     max-args: 12
     max-locals: 15

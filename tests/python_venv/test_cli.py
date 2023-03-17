@@ -115,7 +115,7 @@ def _generate_combinations(
     env_types = all_env_types if env_types is None else env_types
     requirements = all_requirements if requirements is None else requirements
 
-    for (name, things, all_things) in [
+    for name, things, all_things in [
         ("commands", commands, all_commands),
         ("env_types", env_types, all_env_types),
         ("requirements", requirements, all_requirements),

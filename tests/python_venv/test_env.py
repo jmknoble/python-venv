@@ -1,10 +1,11 @@
-"""Provide unit tests for `~python_venv.env`:py:mod:."""
+"""Provide unit tests for `~python_venv.env.base`:py:mod:."""
 
 import unittest
 
 import parameterized  # https://pypi.org/project/parameterized/
 
-from python_venv import const, env, reqs
+from python_venv import const, reqs
+from python_venv.env import base as env_base
 
 
 class TestEnv_000_General(unittest.TestCase):
@@ -20,7 +21,7 @@ class TestEnv_000_General(unittest.TestCase):
         _ = const.PYENV
         _ = const.VENV_DIR
         _ = const.DEV_SUFFIX
-        _ = const.DIST_DIR_PLACEHOLDER
+        _ = const.DIST_DIR
         _ = const.ENV_DIR_PLACEHOLDER
         _ = const.ENV_TYPES_NAMED
 
@@ -34,14 +35,12 @@ class TestEnv_010_BaseVirtualEnvironment(unittest.TestCase):
 
     def test_PV_ENV_BAS_000_instantiate_empty(self):
         with self.assertRaises(TypeError) as raised:
-            env.BaseVirtualEnvironment()
+            env_base.BaseVirtualEnvironment()
         msg = raised.exception.args[0]
-        self.assertTrue(
-            msg.startswith("__init__() missing 1 required positional argument")
-        )
+        self.assertTrue("__init__() missing 1 required positional argument" in msg)
 
     def test_PV_ENV_BAS_001_instantiate(self):
-        x = env.BaseVirtualEnvironment("dummy_req_scheme")
+        x = env_base.BaseVirtualEnvironment("dummy_req_scheme")
         self.assertEqual(x.req_scheme, "dummy_req_scheme")
 
     @parameterized.parameterized.expand(
@@ -66,17 +65,17 @@ class TestEnv_010_BaseVirtualEnvironment(unittest.TestCase):
         ]
     )
     def test_PV_ENV_BAS_002_instantiate_kwargs(self, name, kwargs, attr, value):
-        x = env.BaseVirtualEnvironment("dummy_req_scheme", **kwargs)
+        x = env_base.BaseVirtualEnvironment("dummy_req_scheme", **kwargs)
         self.assertEqual(getattr(x, attr), value)
 
     def test_PV_ENV_BAS_010_requirements(self):
         dummy_requirements = {"dummy_req_source": ["dummy_value"]}
         reqs.REQUIREMENTS = {"dummy_req_scheme": [dummy_requirements]}
-        x = env.BaseVirtualEnvironment("dummy_req_scheme")
+        x = env_base.BaseVirtualEnvironment("dummy_req_scheme")
         self.assertListEqual(x.requirements.requirements, [dummy_requirements])
 
     def test_PV_ENV_BAS_020_package_name(self):
-        x = env.BaseVirtualEnvironment("dummy_req_scheme")
+        x = env_base.BaseVirtualEnvironment("dummy_req_scheme")
         self.assertEqual(x.package_name, "python_venv")
 
     @parameterized.parameterized.expand(
@@ -87,11 +86,11 @@ class TestEnv_010_BaseVirtualEnvironment(unittest.TestCase):
     )
     def test_PV_ENV_BAS_030_basename(self, name, basename, expected):
         kwargs = {} if basename is None else {"basename": basename}
-        x = env.BaseVirtualEnvironment("dummy_req_scheme", **kwargs)
+        x = env_base.BaseVirtualEnvironment("dummy_req_scheme", **kwargs)
         self.assertEqual(x.basename, expected)
 
     def test_PV_ENV_BAS_040_abstract_env_name(self):
-        x = env.BaseVirtualEnvironment("dummy_req_scheme")
+        x = env_base.BaseVirtualEnvironment("dummy_req_scheme")
         with self.assertRaises(NotImplementedError):
             x.env_name
 
@@ -103,40 +102,40 @@ class TestEnv_010_BaseVirtualEnvironment(unittest.TestCase):
     )
     def test_PV_ENV_BAS_045_env_prefix(self, name, env_prefix, expected):
         kwargs = {} if env_prefix is None else {"env_prefix": env_prefix}
-        x = env.BaseVirtualEnvironment("dummy_req_scheme", **kwargs)
+        x = env_base.BaseVirtualEnvironment("dummy_req_scheme", **kwargs)
         self.assertEqual(x.env_prefix, expected)
 
     def test_PV_ENV_BAS_050_abstract_env_dir(self):
-        x = env.BaseVirtualEnvironment("dummy_req_scheme")
+        x = env_base.BaseVirtualEnvironment("dummy_req_scheme")
         with self.assertRaises(NotImplementedError):
             x.env_dir
 
     def test_PV_ENV_BAS_051_abstract_env_bin_dir(self):
-        x = env.BaseVirtualEnvironment("dummy_req_scheme")
+        x = env_base.BaseVirtualEnvironment("dummy_req_scheme")
         with self.assertRaises(NotImplementedError):
             x.env_bin_dir
 
     def test_PV_ENV_BAS_052_abstract_env_python(self):
-        x = env.BaseVirtualEnvironment("dummy_req_scheme")
+        x = env_base.BaseVirtualEnvironment("dummy_req_scheme")
         with self.assertRaises(NotImplementedError):
             x.env_python
 
     def test_PV_ENV_BAS_055_abstract_abs_env_dir(self):
-        x = env.BaseVirtualEnvironment("dummy_req_scheme")
+        x = env_base.BaseVirtualEnvironment("dummy_req_scheme")
         with self.assertRaises(NotImplementedError):
             x.abs_env_dir
 
     def test_PV_ENV_BAS_060_abstract_env_description(self):
-        x = env.BaseVirtualEnvironment("dummy_req_scheme")
+        x = env_base.BaseVirtualEnvironment("dummy_req_scheme")
         with self.assertRaises(NotImplementedError):
             x.env_description
 
     def test_PV_ENV_BAS_100_abstract_create(self):
-        x = env.BaseVirtualEnvironment("dummy_req_scheme")
+        x = env_base.BaseVirtualEnvironment("dummy_req_scheme")
         with self.assertRaises(NotImplementedError):
             x.create()
 
     def test_PV_ENV_BAS_200_abstract_remove(self):
-        x = env.BaseVirtualEnvironment("dummy_req_scheme")
+        x = env_base.BaseVirtualEnvironment("dummy_req_scheme")
         with self.assertRaises(NotImplementedError):
             x.remove()

@@ -1,4 +1,4 @@
-"""Provide unit tests for `~python_venv.env`:py:mod:."""
+"""Provide unit tests for `~python_venv.env.conda`:py:mod:."""
 
 import os
 import os.path
@@ -27,9 +27,7 @@ class TestEnv_300_CondaEnvironment(unittest.TestCase):
         with self.assertRaises(TypeError) as raised:
             env.CondaEnvironment()
         msg = raised.exception.args[0]
-        self.assertTrue(
-            msg.startswith("__init__() missing 1 required positional argument")
-        )
+        self.assertTrue("__init__() missing 1 required positional argument" in msg)
 
     @parameterized.parameterized.expand(
         [
@@ -550,7 +548,7 @@ class TestEnv_320_CondaRemove(unittest.TestCase):
                 with ctx.capture_to_file(x.remove) as (_status, _stdout, stderr):
                     original_stderrs.append(stderr)
                 testable_stderrs = [text.lower() for text in original_stderrs]
-                for (i, text) in enumerate(testable_stderrs):
+                for i, text in enumerate(testable_stderrs):
                     if "error" in text:
                         print(original_stderrs[i], file=stderr)
                     self.assertNotIn("error", text)
@@ -626,7 +624,7 @@ class TestEnv_330_CondaReplace(unittest.TestCase):
                 with ctx.capture_to_file(x.replace) as (_status, _stdout, stderr):
                     original_stderrs.append(stderr)
                 testable_stderrs = [text.lower() for text in original_stderrs]
-                for (i, text) in enumerate(testable_stderrs):
+                for i, text in enumerate(testable_stderrs):
                     if "error" in text:
                         print(original_stderrs[i], file=stderr)
                     self.assertNotIn("error", text)
@@ -702,7 +700,7 @@ class TestEnv_330_CondaReplace(unittest.TestCase):
                 with ctx.capture_to_file(x.replace) as (_status, _stdout, stderr):
                     original_stderrs.append(stderr)
                 testable_stderrs = [text.lower() for text in original_stderrs]
-                for (i, text) in enumerate(testable_stderrs):
+                for i, text in enumerate(testable_stderrs):
                     if "error" in text:
                         print(original_stderrs[i], file=stderr)
                     self.assertNotIn("error", text)

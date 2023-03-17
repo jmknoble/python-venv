@@ -98,7 +98,7 @@ print instructions for enabling autocompletion.
 def _add_subcommands(argparser, commands, dest="command"):
     subcommands = {}
     subparsers = argparser.add_subparsers(title="subcommands", dest=dest)
-    for (command, properties) in commands.items():
+    for command, properties in commands.items():
         subcommands[command] = subparsers.add_parser(
             command,
             aliases=properties.get("aliases", []),
@@ -233,7 +233,7 @@ def _add_venv_arguments(argparser, req_scheme_required=False, **_kwargs):
         action="store_const",
         dest="req_scheme",
         const=reqs.REQ_SCHEME_WHEEL,
-        help=("Virtual environment uses '{command}'").format(
+        help=("Virtual environment uses the wheel package built by '{command}'").format(
             command=" ".join(reqs.REQUIREMENTS_BDIST_WHEEL).format(python=const.PYTHON)
         ),
     )
@@ -289,8 +289,8 @@ def _add_venv_arguments(argparser, req_scheme_required=False, **_kwargs):
         help=(
             f"Name of (or path to) virtual environment "
             f"(default: '{const.VENV_DIR}' for venv environments, "
-            f"or inferred from BASENAME for pyenv and conda "
-            f"environments)"
+            f"or inferred from BASENAME for named-venv, pyenv, and "
+            f"conda environments)"
         ),
     )
 
@@ -523,7 +523,7 @@ def main(*argv):
     _add_version_arguments(prog, argparser)
     _populate_command_actions(COMMANDS, prog)
     subcommands = _add_subcommands(argparser, COMMANDS)
-    for (subcommand, subcommand_parser) in subcommands.items():
+    for subcommand, subcommand_parser in subcommands.items():
         kwargs = {"subcommand": subcommand}
         for key in ["req_scheme_required"]:
             if key in COMMANDS[subcommand]:

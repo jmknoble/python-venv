@@ -35,7 +35,6 @@ class TestRequirements(unittest.TestCase):
         _ = reqs.REQUIREMENTS_PACKAGE
         _ = reqs.REQUIREMENTS_PIP
         _ = reqs.REQUIREMENTS_SOURCE
-        _ = reqs.REQUIREMENTS_CLEAN
         _ = reqs.REQUIREMENTS_BDIST_WHEEL
         _ = reqs.REQUIREMENTS_WHEELFILE
         _ = reqs.REQUIREMENTS_VENV
@@ -120,10 +119,22 @@ class TestRequirements(unittest.TestCase):
         self.assertListEqual(x._get_requirements(), self.dummy_requirements)
         self.assertListEqual(x.requirements, self.dummy_requirements)
 
-    def test_PV_RQ_021_get_requirements_venv(self):
+    @parameterized.parameterized.expand(
+        [
+            ("plain", None, False),
+            ("wheel", reqs.REQ_SCHEME_WHEEL, True),
+        ]
+    )
+    def test_PV_RQ_021_get_requirements_venv(
+        self, name, supplemental_scheme, expect_build_package
+    ):
         self._set_dummy_requirements()
-        x = reqs.ReqScheme(reqs.REQ_SCHEME_VENV)
-        expected_requirements = reqs.SPECIAL_REQUIREMENTS[reqs.REQ_SCHEME_VENV]
+        x = reqs.ReqScheme(
+            reqs.REQ_SCHEME_VENV, supplemental_scheme=supplemental_scheme
+        )
+        expected_requirements = reqs.SPECIAL_REQUIREMENTS[reqs.REQ_SCHEME_VENV][
+            "default" if supplemental_scheme is None else supplemental_scheme
+        ]
         self.assertListEqual(x.requirements, expected_requirements)
         venv_packages = []
         for entry in x.requirements:
@@ -132,6 +143,8 @@ class TestRequirements(unittest.TestCase):
         self.assertIn("pip", venv_packages)
         self.assertIn("setuptools", venv_packages)
         self.assertIn("wheel", venv_packages)
+        if expect_build_package:
+            self.assertIn("build", venv_packages)
 
     def test_PV_RQ_022_get_requirements_raises(self):
         self._set_dummy_requirements()

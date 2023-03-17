@@ -1,11 +1,25 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from __future__ import print_function
 
+import configparser
+import os.path
 import sys
 
 import utilutil.argparsing as argparsing
 import utilutil.runcommand as runcommand
+
+BUMPVERSION_CONFIG_FILES = [
+    ".bumpversion.cfg",
+    "setup.cfg",
+]
+BUMPVERSION_BASE_COMMAND = [
+    "python3",
+    "-m",
+    "bumpversion",
+    "--no-commit",
+    "--no-tag",
+]
 
 DEFAULT_VERSION_FILENAME = "VERSION"
 DEFAULT_STABLE_VERSION_FILENAME = "STABLE_VERSION"
@@ -16,17 +30,20 @@ DESCRIPTION = (
     "version if they do not match."
 )
 
-RELEASE_TYPES = [
-    "dev",
-    "a",
-    "alpha",
-    "b",
-    "beta",
-    "c",
-    "pre",
-    "preview",
-    "rc",
-]
+RELEASE_TYPES_ALL = {
+    # release_type: normalized_release_type
+    "dev": "dev",
+    "a": "a",
+    "alpha": "a",
+    "b": "b",
+    "beta": "b",
+    "c": "rc",
+    "pre": "rc",
+    "preview": "rc",
+    "rc": "rc",
+}
+
+RELEASE_TYPES = list(RELEASE_TYPES_ALL)
 
 RELEASE_TYPES_REQUIRING_SEPARATOR = {"dev"}
 
@@ -39,6 +56,35 @@ def _get_version_from_file(version_file):
             "{path}: version file appears to be blank".format(path=version_file.path)
         )
     return version[0].rstrip()
+
+
+def _bumpversion_in_use():
+    """Tell whether a `bump2version`:py:mod: is in use."""
+    for config_filename in BUMPVERSION_CONFIG_FILES:
+        if os.path.exists(config_filename):
+            config_file = configparser.ConfigParser()
+            config_file.read(config_filename)
+            if "bumpversion" in config_file:
+                return True
+    return False
+
+
+def _write_version(version_filename, new_version, dry_run):
+    if _bumpversion_in_use():
+        bumpversion_command = BUMPVERSION_BASE_COMMAND + [
+            "--new-version",
+            new_version,
+            "patch",
+        ]
+        runcommand.run_command(
+            bumpversion_command,
+            check=True,
+            show_trace=True,
+            dry_run=dry_run,
+        )
+    elif not dry_run:
+        with open(version_filename, "w", encoding="utf-8") as version_file:
+            version_file.write(new_version + "\n")
 
 
 def _add_arguments(argparser):
@@ -93,10 +139,10 @@ def main(*argv):
     _add_arguments(argparser)
     args = argparser.parse_args(argv)
 
-    with open(args.version_file, "r") as version_file:
+    with open(args.version_file, "r", encoding="utf-8") as version_file:
         current_version = _get_version_from_file(version_file)
 
-    with open(args.stable_version_file, "r") as stable_version_file:
+    with open(args.stable_version_file, "r", encoding="utf-8") as stable_version_file:
         stable_version = _get_version_from_file(stable_version_file)
 
     if current_version == stable_version:
@@ -109,18 +155,15 @@ def main(*argv):
             dry_run=args.dry_run,
         )
     else:
-        sep = "." if args.release_type in RELEASE_TYPES_REQUIRING_SEPARATOR else ""
-        new_version = "".join(
-            [current_version, sep, args.release_type, args.build_number]
-        )
+        release_type = RELEASE_TYPES_ALL[args.release_type]  # normalize release type
+        sep = "." if release_type in RELEASE_TYPES_REQUIRING_SEPARATOR else ""
+        new_version = "".join([current_version, sep, release_type, args.build_number])
         runcommand.print_trace(
             ["Updating current version from", current_version, "to", new_version],
             trace_prefix="",
             dry_run=args.dry_run,
         )
-        if not args.dry_run:
-            with open(args.version_file, "w") as version_file:
-                version_file.write(new_version + "\n")
+        _write_version(args.version_file, new_version, dry_run=args.dry_run)
 
     return 0
 

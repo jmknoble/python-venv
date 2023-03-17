@@ -1,4 +1,4 @@
-"""Provide unit tests for `~python_venv.env`:py:mod:."""
+"""Provide unit tests for `~python_venv.env.venv`:py:mod:."""
 
 import os
 import os.path
@@ -27,9 +27,7 @@ class TestEnv_100_VenvEnvironment(unittest.TestCase):
         with self.assertRaises(TypeError) as raised:
             env.VenvEnvironment()
         msg = raised.exception.args[0]
-        self.assertTrue(
-            msg.startswith("__init__() missing 1 required positional argument")
-        )
+        self.assertTrue("__init__() missing 1 required positional argument" in msg)
 
     @parameterized.parameterized.expand(
         [
@@ -732,7 +730,7 @@ class TestEnv_120_VenvRemove(unittest.TestCase):
                 with ctx.capture_to_file(x.remove) as (_status, _stdout, stderr):
                     original_stderrs.append(stderr)
                 testable_stderrs = [text.lower() for text in original_stderrs]
-                for (i, text) in enumerate(testable_stderrs):
+                for i, text in enumerate(testable_stderrs):
                     if "error" in text:
                         print(original_stderrs[i], file=stderr)
                     self.assertNotIn("error", text)
@@ -857,7 +855,7 @@ class TestEnv_130_VenvReplace(unittest.TestCase):
                 with ctx.capture_to_file(x.replace) as (_status, _stdout, stderr):
                     original_stderrs.append(stderr)
                 testable_stderrs = [text.lower() for text in original_stderrs]
-                for (i, text) in enumerate(testable_stderrs):
+                for i, text in enumerate(testable_stderrs):
                     if "error" in text:
                         print(original_stderrs[i], file=stderr)
                     self.assertNotIn("error", text)
@@ -982,7 +980,7 @@ class TestEnv_130_VenvReplace(unittest.TestCase):
                 with ctx.capture_to_file(x.remove) as (_status, _stdout, stderr):
                     original_stderrs.append(stderr)
                 testable_stderrs = [text.lower() for text in original_stderrs]
-                for (i, text) in enumerate(testable_stderrs):
+                for i, text in enumerate(testable_stderrs):
                     if "error" in text:
                         print(original_stderrs[i], file=stderr)
                     self.assertNotIn("error", text)
