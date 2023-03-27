@@ -27,7 +27,7 @@ class TestEnv_100_VenvEnvironment(unittest.TestCase):
         with self.assertRaises(TypeError) as raised:
             env.VenvEnvironment()
         msg = raised.exception.args[0]
-        self.assertTrue("__init__() missing 1 required positional argument" in msg)
+        self.assertIn("__init__() missing 1 required positional argument", msg)
 
     @parameterized.parameterized.expand(
         [

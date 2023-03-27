@@ -27,7 +27,7 @@ class TestEnv_400_NamedVenvEnvironment(unittest.TestCase):
         with self.assertRaises(TypeError) as raised:
             env.NamedVenvEnvironment()
         msg = raised.exception.args[0]
-        self.assertTrue("__init__() missing 1 required positional argument" in msg)
+        self.assertIn("__init__() missing 1 required positional argument", msg)
 
     def test_PV_ENV_NMV_001_instantiate_missing_required(self):
         with self.assertRaises(ValueError) as raised:
