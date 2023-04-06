@@ -184,7 +184,7 @@ what to install into a virtual environment ("requirement schemes"):
   thing to install via `python3 setup.py install`.
 - **Wheel** -- using the Python source project in the current directory as a
   thing to build via `python3 -m build` and then installing the
-  resultng wheelfile.
+  resulting wheelfile.
 - **Dev** -- using a `requirements_dev.txt` file.
 - **Devplus** -- using a combination of requirements files to install packages
   as a development environment for the Python source project in the current
