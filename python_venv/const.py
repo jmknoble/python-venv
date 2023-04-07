@@ -56,5 +56,6 @@ ENV_TYPES_VERSIONED_STRICT = [
 FROM_FILES = "files"
 FROM_PACKAGES = "packages"
 FROM_COMMANDS = "commands"
+FROM_SDIST = "sdist"
 FROM_BDIST_WHEEL = "bdist_wheel"
 FROM_PIP_ARGS = "pip_args"

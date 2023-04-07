@@ -224,7 +224,7 @@ def _add_venv_arguments(argparser, req_scheme_required=False, **_kwargs):
         dest="req_scheme",
         const=reqs.REQ_SCHEME_SOURCE,
         help=("Virtual environment uses '{command}'").format(
-            command=" ".join(reqs.REQUIREMENTS_SOURCE).format(python=const.PYTHON)
+            command=" ".join(reqs.REQUIREMENTS_BUILD_SDIST).format(python=const.PYTHON)
         ),
     )
     req_scheme_mutex_group.add_argument(
@@ -234,7 +234,7 @@ def _add_venv_arguments(argparser, req_scheme_required=False, **_kwargs):
         dest="req_scheme",
         const=reqs.REQ_SCHEME_WHEEL,
         help=("Virtual environment uses the wheel package built by '{command}'").format(
-            command=" ".join(reqs.REQUIREMENTS_BDIST_WHEEL).format(python=const.PYTHON)
+            command=" ".join(reqs.REQUIREMENTS_BUILD_WHEEL).format(python=const.PYTHON)
         ),
     )
 
