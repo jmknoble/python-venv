@@ -34,8 +34,9 @@ class TestRequirements(unittest.TestCase):
         _ = reqs.REQUIREMENTS_BUILD
         _ = reqs.REQUIREMENTS_PACKAGE
         _ = reqs.REQUIREMENTS_PIP
-        _ = reqs.REQUIREMENTS_SOURCE
-        _ = reqs.REQUIREMENTS_BDIST_WHEEL
+        _ = reqs.REQUIREMENTS_BUILD_SDIST
+        _ = reqs.REQUIREMENTS_SDISTFILE
+        _ = reqs.REQUIREMENTS_BUILD_WHEEL
         _ = reqs.REQUIREMENTS_WHEELFILE
         _ = reqs.REQUIREMENTS_VENV
 
@@ -452,6 +453,35 @@ class TestRequirements(unittest.TestCase):
         self._set_dummy_requirements()
         x = reqs.ReqScheme("dummy_req_scheme", python="schmython")
         result = x._collect_bdist_wheel(entry)
+        self.assertListEqual(result, expected)
+
+    @parameterized.parameterized.expand(
+        [
+            ("none", {}, []),
+            ("empty", {const.FROM_SDIST: []}, []),
+            (
+                "full",
+                {const.FROM_SDIST: ["dummy_command", "dummy_arg"]},
+                ["dummy_command", "dummy_arg"],
+            ),
+            (
+                "templated",
+                {
+                    const.FROM_SDIST: [
+                        "{python}",
+                        "-m",
+                        "dummy_module",
+                        "dummy_arg",
+                    ]
+                },
+                ["schmython", "-m", "dummy_module", "dummy_arg"],
+            ),
+        ]
+    )
+    def test_PV_RQ_83_collect_sdist(self, name, entry, expected):
+        self._set_dummy_requirements()
+        x = reqs.ReqScheme("dummy_req_scheme", python="schmython")
+        result = x._collect_sdist(entry)
         self.assertListEqual(result, expected)
 
     def test_PV_RQ_100_check_requirements_for_scheme_plain(self):

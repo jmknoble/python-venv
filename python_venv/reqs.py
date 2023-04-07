@@ -16,14 +16,22 @@ REQUIREMENTS_BUILD = os.path.join("dev", "requirements_build.txt")
 REQUIREMENTS_PIP = True
 REQUIREMENTS_PACKAGE = "{basename}"
 
-REQUIREMENTS_SOURCE = ["{python}", "setup.py", "install"]
+REQUIREMENTS_BUILD_SDIST = [
+    "{python}",
+    "-m",
+    "build",
+    "--sdist",
+    "--outdir",
+    const.DIST_DIR,
+]
+REQUIREMENTS_SDISTFILE = "{sdist}"
 
 # https://pypa-build.readthedocs.io/en/stable/index.html
-REQUIREMENTS_BDIST_WHEEL = ["{python}", "-m", "build", "--outdir", const.DIST_DIR]
+REQUIREMENTS_BUILD_WHEEL = ["{python}", "-m", "build", "--outdir", const.DIST_DIR]
 REQUIREMENTS_WHEELFILE = "{wheelfile}"
 
 REQUIREMENTS_VENV = ["pip", "setuptools", "wheel"]
-REQUIREMENTS_VENV_WHEEL = ["build"]
+REQUIREMENTS_VENV_BUILD = ["build"]
 
 REQ_SCHEME_PLAIN = "plain"
 REQ_SCHEME_DEV = "dev"
@@ -78,10 +86,11 @@ REQUIREMENTS = {
         {const.FROM_PIP_ARGS: REQUIREMENTS_PIP},
     ],
     REQ_SCHEME_SOURCE: [
-        {const.FROM_COMMANDS: [REQUIREMENTS_SOURCE]},
+        {const.FROM_SDIST: REQUIREMENTS_BUILD_SDIST},
+        {const.FROM_PACKAGES: [REQUIREMENTS_SDISTFILE]},
     ],
     REQ_SCHEME_WHEEL: [
-        {const.FROM_BDIST_WHEEL: REQUIREMENTS_BDIST_WHEEL},
+        {const.FROM_BDIST_WHEEL: REQUIREMENTS_BUILD_WHEEL},
         {const.FROM_PACKAGES: [REQUIREMENTS_WHEELFILE]},
     ],
 }
@@ -91,15 +100,18 @@ SPECIAL_REQUIREMENTS = {
         "default": [
             {const.FROM_PACKAGES: REQUIREMENTS_VENV},
         ],
+        REQ_SCHEME_SOURCE: [
+            {const.FROM_PACKAGES: REQUIREMENTS_VENV + REQUIREMENTS_VENV_BUILD},
+        ],
         REQ_SCHEME_WHEEL: [
-            {const.FROM_PACKAGES: REQUIREMENTS_VENV + REQUIREMENTS_VENV_WHEEL},
+            {const.FROM_PACKAGES: REQUIREMENTS_VENV + REQUIREMENTS_VENV_BUILD},
         ],
     }
 }
 
-REGEX_BDIST_WHEEL_WHEELFILE = (
-    r"(?im)^Successfully built [^ ]+ and (?P<wheelfile>.*\.whl)"
-)
+REGEX_SDISTFILE = r"(?im)^Successfully built (?P<sdist>.*\.tar.gz)"
+
+REGEX_WHEELFILE = r"(?im)^Successfully built [^ ]+ and (?P<wheelfile>.*\.whl)"
 
 
 class ReqScheme(object):
@@ -238,6 +250,9 @@ class ReqScheme(object):
     def _get_requirements_commands(self, entry):
         return [self._format(x) for x in entry.get(const.FROM_COMMANDS, [])]
 
+    def _get_requirements_sdist(self, entry):
+        return self._format(entry.get(const.FROM_SDIST, []))
+
     def _get_requirements_bdist_wheel(self, entry):
         return self._format(entry.get(const.FROM_BDIST_WHEEL, []))
 
@@ -254,6 +269,10 @@ class ReqScheme(object):
         self._handled_requirements_sources.add(const.FROM_COMMANDS)
         return self._get_requirements_commands(entry)
 
+    def _collect_sdist(self, entry):
+        self._handled_requirements_sources.add(const.FROM_SDIST)
+        return self._get_requirements_sdist(entry)
+
     def _collect_bdist_wheel(self, entry):
         self._handled_requirements_sources.add(const.FROM_BDIST_WHEEL)
         return self._get_requirements_bdist_wheel(entry)
@@ -263,11 +282,14 @@ class ReqScheme(object):
         for entry in self.requirements:
             pip_arguments = self._collect_pip_arguments(entry)
             commands = self._collect_commands(entry)
+            sdist = self._collect_sdist(entry)
             bdist_wheel = self._collect_bdist_wheel(entry)
             if pip_arguments:
                 self._fulfill_pip_requirements(pip_arguments, upgrade=upgrade)
             if commands:
                 self._fulfill_commands(commands)
+            if sdist:
+                self._fulfill_sdist(sdist)
             if bdist_wheel:
                 self._fulfill_bdist_wheel(bdist_wheel)
             for whence in entry:
@@ -299,23 +321,40 @@ class ReqScheme(object):
                 stderr=self.stderr,
             )
 
-    def _fulfill_bdist_wheel(self, bdist_wheel_command):
+    def _fulfill_dist(self, build_command, dist_type, regex, dry_run_format):
         output = runcommand.run_command(
-            bdist_wheel_command,
+            build_command,
             show_trace=self.show_trace,
             dry_run=self.dry_run,
             return_output=True,
             env=self.env,
         )
         if self.dry_run:
-            wheelfile = self._format("{name}-{version}-*.whl")
+            dist = self._format(dry_run_format)
         else:
-            match = re.search(REGEX_BDIST_WHEEL_WHEELFILE, output)
+            match = re.search(regex, output)
             if not match:
-                raise RuntimeError(f"unable to detect wheelfile: {bdist_wheel_command}")
-            wheelfile = match.group("wheelfile")
-        wheelfile = os.path.join(const.DIST_DIR, wheelfile)
-        self.formatter.add(wheelfile=wheelfile)
+                raise RuntimeError(f"unable to detect {dist_type}: {build_command}")
+            dist = match.group(dist_type)
+        dist = os.path.join(const.DIST_DIR, dist)
+        formatting = {dist_type: dist}
+        self.formatter.add(**formatting)
+
+    def _fulfill_sdist(self, build_sdist_command):
+        self._fulfill_dist(
+            build_command=build_sdist_command,
+            dist_type="sdist",
+            regex=REGEX_SDISTFILE,
+            dry_run_format="{name}-{version}-*.tar.gz",
+        )
+
+    def _fulfill_bdist_wheel(self, bdist_wheel_command):
+        self._fulfill_dist(
+            build_command=bdist_wheel_command,
+            dist_type="wheelfile",
+            regex=REGEX_WHEELFILE,
+            dry_run_format="{name}-{version}-*.whl",
+        )
 
     def check(self):
         """Check the requirements sources for missing things."""
