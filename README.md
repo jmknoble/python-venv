@@ -61,8 +61,7 @@ Changes](#backwards-incompatible-changes).
 
 The recommended method of installing **python-venv** is to install it into a
 virtual environment.  Currently installation from a wheelfile or from source
-is supported.  Installing from a wheelfile is recommended; it requires the
-[build][] package in addition to [setuptools][] and [wheel][].
+is supported.  Installing from a wheelfile is recommended.
 
 **python-venv** can create the virtual environment and install itself for you.
 For a [venv][] environment:
@@ -181,10 +180,11 @@ what to install into a virtual environment ("requirement schemes"):
 - **Pip** -- using the additional arguments on the command line as arguments
   to `pip install`.
 - **Source** -- using the Python source project in the current directory as a
-  thing to install via `python3 setup.py install`.
+  thing to build via `python3 -m build --sdist` and then installing the
+  resulting source distrbution using `pip`.
 - **Wheel** -- using the Python source project in the current directory as a
   thing to build via `python3 -m build` and then installing the
-  resulting wheelfile.
+  resulting wheelfile using `pip`.
 - **Dev** -- using a `requirements_dev.txt` file.
 - **Devplus** -- using a combination of requirements files to install packages
   as a development environment for the Python source project in the current
@@ -198,7 +198,7 @@ These schemes correspond roughly to the following:
 | frozen | `pip install -r requirements_frozen.txt` |
 | package | `pip install this-package-name` |
 | pip | `pip install ARG1 ARG2 ...` |
-| source | `python3 setup.py install` |
+| source | `python3 -m build --sdist && pip install SDIST` |
 | wheel | `python3 -m build && pip install WHEELFILE` |
 | dev | `pip install -r requirements_dev.txt` |
 | devplus | `pip install -r requirements.txt -r dev/requirements_build.txt -r dev/requirements_dev.txt -r dev/requirements_test.txt` |
