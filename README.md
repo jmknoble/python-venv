@@ -6,12 +6,6 @@
 [![CodeStyle-black](https://img.shields.io/badge/CodeStyle-black-informational)](https://github.com/psf/black)
 
 
-> [!WARNING]]
->
-> **python-venv** is deprecated and no longer maintained.
-> Please use [uv](https://github.com/astral-sh/uv) instead.
-
-
 An opinionated but flexible Python virtual environment tool.
 
 Enables straightforward creation, removal, or replacement of Python virtual
@@ -20,6 +14,12 @@ predictable names/locations and flexible strategies.
 
 Intended to be used by either developers or consumers of source-available
 Python packages.
+
+
+> [!WARNING]
+>
+> **python-venv** is deprecated and no longer maintained.
+> Please use [uv](https://github.com/astral-sh/uv) instead.
 
 
 [begintoc]: #
